@@ -12,9 +12,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IWeth} from "../IWeth.sol";
 import {IAccount} from "../interfaces/core/IAccount.sol";
 import {IAccountManager} from "../interfaces/core/IAccountManager.sol";
+import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
 import {ISharesRegistry} from "../interfaces/core/ISharesRegistry.sol";
-import {IStablesManager} from "../interfaces/core/IStablesManager.sol";
 import {MathOperations} from "../libraries/MathOperations.sol";
 import {Account} from "./Account.sol";
 
@@ -85,7 +85,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
     function deposit(address _token, uint256 _amount) external nonReentrant whenNotPaused isValidToken(_token) isValidAmount(_amount) isValidAccount(userToAccount[msg.sender]) {
         address sender = msg.sender;
         address account = userToAccount[sender];
-        //_getStablesManager().addCollateral(account, _token, _amount);
+        //_getCollateralManager().addCollateral(account, _token, _amount);
         IERC20(_token).safeTransferFrom(sender, account, _amount);
         emit Deposit(account, _token, _amount);
     }
@@ -95,9 +95,9 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
         address account = userToAccount[sender];
         //require(manager.canWithdrawToken(_token), IAccountManager__CannotWithdrawToken());
         //checking if this token was airdropped or user has actual collateral for the token
-        //(, address tokenInRegistry) = _getStablesManager().sharesRegistryInfo(_token);
+        //(, address tokenInRegistry) = _getCollateralManager().sharesRegistryInfo(_token);
         // if (_tokenRegistry != address(0) && ISharesRegistry(_tokenRegistry).collateral(account) > 0){
-        //     _getStablesManager().removeCollateral(account, _token, _amount);
+        //     _getCollateralManager().removeCollateral(account, _token, _amount);
         // }
         // uint256 withdrawalFeeRate = manager.withdrawalFeeRate();
         // if(withdrawalFeeRate > 0) {
@@ -128,7 +128,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
         returns (uint256 tUsdMinted)
     {
         address account = userToAccount[msg.sender];
-        // tUsdMinted = _getStablesManager().borrow(account, _token, _amount, _minTusdToMint, mintToUserDirectly);
+        // tUsdMinted = _getCollateralManager().borrow(account, _token, _amount, _minTusdToMint, mintToUserDirectly);
         emit Borrowed(account, _token, _amount, mintToUserDirectly);
     }
 
@@ -136,7 +136,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
         address sender = msg.sender;
         address account = userToAccount[sender];
         address _burnFrom = repayFromUserDirectly ? sender : account;
-        // _getStablesManager().repay(account, _token, _amount, _burnFrom);
+        // _getCollateralManager().repay(account, _token, _amount, _burnFrom);
         emit Repaid(account, _token, _amount, repayFromUserDirectly);
     }
 
@@ -150,7 +150,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
     }
 
     //PRIVATE FUNCTIONS
-    function _getStablesManager() private view returns (IStablesManager) {
-        //return IStablesManager(manager.stablesManager());
+    function _getCollateralManager() private view returns (ICollateralManager) {
+        //return ICollateralManager(manager.CollateralManager());
     }
 }
