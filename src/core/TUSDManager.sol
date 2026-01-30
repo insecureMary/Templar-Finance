@@ -50,6 +50,26 @@ contract TUSDManager is ITUSDManager {
         _getCollateralManager(token).withdrawCollateral(account, amount);
     }
 
+    function borrow(address account, address token, uint256 amount, uint256 minAmountOut, bool mintToSender) external {
+        require(amount > 0, ZeroAmount());
+        require(tokenRegistry[token].isActive, InactiveToken());
+
+        // //get and convert amount to 18 decimals
+        // uint256 amount18 = transformTo18Decimals(token, amount);
+        // //get the value
+        // uint256 amountValue = amount18.mulDiv(ICollateralManager(token).getExchangeRate(), appManager.EXCHANGE_RATE_PRECISION);
+        // uint256 mintAmount = amountValue.mulDiv(appManager.EXCHANGE_RATE_PRECISION, 1);
+        // //slippage check
+        // require(mintAmount >= minAmountOut, MintAmountIsLessThanSlippage());
+
+        // //update state and mint
+        // totalBorrowedTUSD += mintAmount;
+        // _getCollateralManager(token).borrow(account, amount);
+        // // address receiver = mintToSender?
+        // // TUSD.mint(_to: _mintDirectlyToUser ? _getHoldingManager().holdingUser(_holding) : _holding,)
+        // isAccountSolvent(token, account);
+    }
+
     function isAccountSolvent(address token, address account) public returns (bool) {
         ICollateralManager manager = _getCollateralManager(token);
 
@@ -95,25 +115,5 @@ contract TUSDManager is ITUSDManager {
 
     function _getCollateralManager(address token) private view returns (ICollateralManager) {
         return ICollateralManager(tokenRegistry[token].deployedAt);
-    }
-
-    function borrow(address account, address token, uint256 amount, uint256 minAmountOut, bool mintToSender) external {
-        require(amount > 0, ZeroAmount());
-        require(tokenRegistry[token].isActive, InactiveToken());
-
-        // //get and convert amount to 18 decimals
-        // uint256 amount18 = transformTo18Decimals(token, amount);
-        // //get the value
-        // uint256 amountValue = amount18.mulDiv(ICollateralManager(token).getExchangeRate(), appManager.EXCHANGE_RATE_PRECISION);
-        // uint256 mintAmount = amountValue.mulDiv(appManager.EXCHANGE_RATE_PRECISION, 1);
-        // //slippage check
-        // require(mintAmount >= minAmountOut, MintAmountIsLessThanSlippage());
-
-        // //update state and mint
-        // totalBorrowedTUSD += mintAmount;
-        // _getCollateralManager(token).borrow(account, amount);
-        // // address receiver = mintToSender?
-        // // TUSD.mint(_to: _mintDirectlyToUser ? _getHoldingManager().holdingUser(_holding) : _holding,)
-        // isAccountSolvent(token, account);
     }
 }
