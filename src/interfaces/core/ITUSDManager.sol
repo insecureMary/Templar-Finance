@@ -6,6 +6,8 @@ interface ITUSDManager {
     error InactiveToken();
     error Insolvent();
     error Unauthorized();
+    error ZeroAmount();
+    error MintAmountIsLessThanSlippage();
 
     struct tokenRegistryInfo {
         bool isActive;
