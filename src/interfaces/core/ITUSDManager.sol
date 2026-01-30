@@ -4,6 +4,10 @@ pragma solidity 0.8.33;
 interface ITUSDManager {
     //errors
     error InactiveToken();
+    error Insolvent();
+    error Unauthorized();
+    error ZeroAmount();
+    error MintAmountIsLessThanSlippage();
 
     struct tokenRegistryInfo {
         bool isActive;

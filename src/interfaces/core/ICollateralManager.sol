@@ -5,6 +5,7 @@ interface ICollateralManager {
     //events
     event CollateralDeposited(address indexed account, uint256 indexed amount, address token);
     event CollateralWithdrawn(address indexed account, uint256 indexed amount, address token);
+    event TUSDBorrowed(address indexed account, uint256 indexed amount, address token);
 
     //variables
     struct CollateralManagerConfig {
@@ -19,4 +20,5 @@ interface ICollateralManager {
     function getExchangeRate() external view returns (uint256);
     function borrowed(address account) external returns (uint256 amount);
     function getConfig() external returns (CollateralManagerConfig memory);
+    function borrow(address account, uint256 amount) external;
 }

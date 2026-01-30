@@ -20,6 +20,11 @@ contract collateralManager is ICollateralManager {
         emit CollateralWithdrawn(account, amount, address(this));
     }
 
+    function borrow(address account, uint256 amount) external {
+        borrowed[account] += amount;
+        emit TUSDBorrowed(account, amount, address(this));
+    }
+
     function getExchangeRate() public view returns (uint256 rate) {}
 
     function getConfig() public returns (CollateralManagerConfig memory) {}
