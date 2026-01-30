@@ -38,6 +38,7 @@ contract TUSDManager is ITUSDManager {
     function withdrawCollateral(address account, address token, uint256 amount) external {
         require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
+        require(!isAccountSolvent(token, account), Insolvent());
     }
 
     function isAccountSolvent(address token, address account) public returns (bool) {
