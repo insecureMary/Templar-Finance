@@ -5,6 +5,7 @@ interface ITUSDManager {
     //errors
     error InactiveToken();
     error Insolvent();
+    error Unauthorized();
 
     struct tokenRegistryInfo {
         bool isActive;
