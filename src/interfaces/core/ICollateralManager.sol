@@ -13,7 +13,10 @@ interface ICollateralManager {
         uint256 liquidatorBonus;
     }
 
+    function collateralDeposited(address account) external returns (uint256 amount);
     function depositCollateral(address, uint256) external;
     function withdrawCollateral(address account, uint256 amount) external;
-    function getExchangeRate() external view;
+    function getExchangeRate() external view returns (uint256);
+    function borrowed(address account) external returns (uint256 amount);
+    function getConfig() external returns (CollateralManagerConfig memory);
 }

@@ -40,7 +40,7 @@ contract TUSDManager is ITUSDManager {
         _getCollateralManager(token).withdrawCollateral(account, amount);
     }
 
-    function isAccountSolvent(address token, address account) public view returns (bool) {
+    function isAccountSolvent(address token, address account) public returns (bool) {
         ICollateralManager manager = _getCollateralManager(token);
 
         //if account has not borrow, just return 0;
@@ -48,16 +48,16 @@ contract TUSDManager is ITUSDManager {
             return true;
         }
 
-        uint256 collateralizationRatio = getCollaterizationRatio(token, account, manager.config.collateralizationRate);
+        uint256 collateralizationRatio = getCollaterizationRatio(token, account, manager.getConfig().collateralizationRate);
 
-        return collateralizationRatio >= manager.borrowed;
+        return collateralizationRatio >= manager.borrowed(account);
     }
 
-    function getCollaterizationRatio(address token, address account, uint256 rate) public view returns (uint256) {
+    function getCollaterizationRatio(address token, address account, uint256 rate) public returns (uint256) {
         ICollateralManager collateralManager = ICollateralManager(token);
-        uint256 collateralAmount = collateralManager.CollateralDeposited(account);
+        uint256 collateralAmount = collateralManager.collateralDeposited(account);
         uint256 exchangeRate = collateralManager.getExchangeRate();
-        uint256 precision = appManager.EXCHANGE_RATE_PRECISION() * appManager.PRECISION();
+        uint256 precision = appManager.EXCHANGE_RATE_PRECISION() * appManager.PRECISION_FACTOR();
 
         /**
          * Easy!

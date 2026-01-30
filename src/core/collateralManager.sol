@@ -8,7 +8,7 @@ contract collateralManager is ICollateralManager {
     mapping(address account => uint256 amount) public collateralDeposited;
     mapping(address account => uint256 amount) public borrowed;
 
-    CollateralManagerConfig public config;
+    CollateralManagerConfig private config;
 
     function depositCollateral(address account, uint256 amount) external {
         collateralDeposited[account] += amount;
@@ -20,5 +20,7 @@ contract collateralManager is ICollateralManager {
         emit CollateralWithdrawn(account, amount, address(this));
     }
 
-    function getExchangeRate() public view {}
+    function getExchangeRate() public view returns (uint256 rate) {}
+
+    function getConfig() public returns (CollateralManagerConfig memory) {}
 }
