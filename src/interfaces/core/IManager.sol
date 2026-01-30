@@ -11,19 +11,19 @@ interface IManager {
     event TokenRemovedFromWhitelist(address indexed tokenAddress);
     event WithdrawableTokenAdded(address indexed tokenAdded);
     event WithdrawableTokenRemoved(address indexed tokenAdded);
-    event InvokerUpdated(address indexed invoker, bool allowed);
+    event InvokerStatusUpdated(address indexed invoker, bool allowed);
     event AccountManagerUpdated(address indexed newAccountManager);
     event LiquidationManagerUpdated(address indexed newLiquidationManager);
     event TemplarUsdManagerUpdated(address indexed newTemplarUsdManager);
     event StrategyManagerUpdated(address indexed newStrategyManager);
     event SwapManagerUpdated(address indexed newSwapManager);
-    event PerformanceFeeUpdated(uint256 indexed oldFee, uint256 indexed newFee);
-    event WithdrawalFeeUpdated(uint256 indexed oldFee, uint256 indexed newFee);
-    event LiquidatorBonusUpdated(uint256 indexed oldAmount, uint256 indexed newAmount);
-    event FeeAddressUpdated(address indexed oldAddress, address indexed newAddress);
+    event PerformanceFeeUpdated(uint256 indexed newFee);
+    event WithdrawalFeeUpdated(uint256 indexed newFee);
+    event FeeAddressUpdated(address indexed newAddress);
     event ReceiptTokenFactoryUpdated(address indexed newFactory);
     event OracleUpdated(address indexed newOracle);
     event OracleDataUpdated(bytes32 indexed newData);
+    event MinDebtAmountUpdated(uint256 indexed newMinDebtAmount);
 
     //ERRORS
     error IManager__ZeroAddressInput();
@@ -32,6 +32,9 @@ interface IManager {
     error IManager__TokenAlreadyWhitelisted();
     error IManager__TokenNotWhitelisted();
     error IManager__UnauthorisedCaller();
+    error IManager__TokenAlreadyWithdrawable();
+    error IManager__TokenNotWithdrawable();
+    error IManager__FeeExceedsMaximum();
 
     //STATE MAPPINGS
     function isContractWhitelisted(address _contractAddress) external view returns (bool);
@@ -71,19 +74,18 @@ interface IManager {
     function whitelistToken(address _tokenAddress) external;
     function removeTokenFromWhitelist(address _tokenAddress) external;
     function addWithdrawableToken(address _tokenAddress) external;
-    // function removeWithdrawableToken(address _tokenAddress) external;
-    // function setInvoker(address _invoker, bool _allowed) external;
-    // function setAccountManager(address _newAccountManager) external;
-    // function setLiquidationManager(address _newLiquidationManager) external;
-    // function setTemplarUsdManager(address _newTemplarUsdManager) external;
-    // function setStrategyManager(address _newStrategyManager) external;
-    // function setSwapManager(address _newSwapManager) external;
-    // function setPerformanceFee(uint256 _newFee) external;
-    // function setWithdrawalFee(uint256 _newFee) external;
-    // function setLiquidatorBonus(uint256 _newAmount) external;
-    // function setFeeAddress(address _newFeeAddress) external;
-    // function setReceiptTokenFactory(address _newFactory) external;
-    // function setOracle(address _newOracle) external;
-    // function setOracleData(bytes32 _newData) external;
-    // function setMinDebtAmount(uint256 _newMinDebtAmount) external;
+    function removeWithdrawableToken(address _tokenAddress) external;
+    function setInvoker(address _invoker, bool _status) external;
+    function setAccountManager(address _newAccountManager) external;
+    function setLiquidationManager(address _newLiquidationManager) external;
+    function setTemplarUsdManager(address _newTemplarUsdManager) external;
+    function setStrategyManager(address _newStrategyManager) external;
+    function setSwapManager(address _newSwapManager) external;
+    function setPerformanceFee(uint256 _newFee) external;
+    function setWithdrawalFee(uint256 _newFee) external;
+    function setFeeAddress(address _newFeeAddress) external;
+    function setReceiptTokenFactory(address _newFactory) external;
+    function setOracle(address _newOracle) external;
+    function setOracleData(bytes32 _newData) external;
+    function setMinDebtAmount(uint256 _newMinDebtAmount) external;
 }
