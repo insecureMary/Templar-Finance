@@ -72,5 +72,81 @@ contract Manager is IManager, Ownable2Step {
 
     function addWithdrawableToken(address _tokenAddress) external isValidAddress(_tokenAddress) {
         require(msg.sender == owner() || msg.sender == templarUsdManager, IManager__UnauthorisedCaller());
+        require(!isWithdrawableToken[_tokenAddress], IManager__TokenAlreadyWithdrawable());
+        isWithdrawableToken[_tokenAddress] = true;
+        emit WithdrawableTokenAdded(_tokenAddress);
+    }
+
+    function removeWithdrawableToken(address _tokenAddress) external onlyOwner {
+        require(isWithdrawableToken[_tokenAddress], IManager__TokenNotWithdrawable());
+        isWithdrawableToken[_tokenAddress] = false;
+        emit WithdrawableTokenRemoved(_tokenAddress);
+    }
+
+    function setInvoker(address _invoker, bool _status) external onlyOwner isValidAddress(_invoker) {
+        isInvoker[_invoker] = _status;
+        emit InvokerStatusUpdated(_invoker, _status);
+    }
+
+    function setAccountManager(address _newAccountManager) external onlyOwner isValidAddress(_newAccountManager) {
+        accountManager = _newAccountManager;
+        emit AccountManagerUpdated(_newAccountManager);
+    }
+
+    function setLiquidationManager(address _newLiquidationManager) external onlyOwner isValidAddress(_newLiquidationManager) {
+        liquidationManager = _newLiquidationManager;
+        emit LiquidationManagerUpdated(_newLiquidationManager);
+    }
+
+    function setTemplarUsdManager(address _newTemplarUsdManager) external onlyOwner isValidAddress(_newTemplarUsdManager) {
+        templarUsdManager = _newTemplarUsdManager;
+        emit TemplarUsdManagerUpdated(_newTemplarUsdManager);
+    }
+
+    function setStrategyManager(address _newStrategyManager) external onlyOwner isValidAddress(_newStrategyManager) {
+        strategyManager = _newStrategyManager;
+        emit StrategyManagerUpdated(_newStrategyManager);
+    }
+
+    function setSwapManager(address _newSwapManager) external onlyOwner isValidAddress(_newSwapManager) {
+        swapManager = _newSwapManager;
+        emit SwapManagerUpdated(_newSwapManager);
+    }
+
+    function setPerformanceFee(uint256 _newFee) external onlyOwner {
+        require(_newFee <= MAX_PERFORMANCE_FEE, IManager__FeeExceedsMaximum());
+        performanceFee = _newFee;
+        emit PerformanceFeeUpdated(_newFee);
+    }
+
+    function setWithdrawalFee(uint256 _newFee) external onlyOwner {
+        require(_newFee <= MAX_WITHDRAWAL_FEE, IManager__FeeExceedsMaximum());
+        withdrawalFee = _newFee;
+        emit WithdrawalFeeUpdated(_newFee);
+    }
+
+    function setFeeAddress(address _newFeeAddress) external onlyOwner isValidAddress(_newFeeAddress) {
+        feeAddress = _newFeeAddress;
+        emit FeeAddressUpdated(_newFeeAddress);
+    }
+
+    function setReceiptTokenFactory(address _newFactory) external onlyOwner isValidAddress(_newFactory) {
+        receiptTokenFactory = _newFactory;
+        emit ReceiptTokenFactoryUpdated(_newFactory);
+    }
+
+    function setOracle(address _newOracle) external onlyOwner isValidAddress(_newOracle) {
+        tUsdOracle = IOracle(_newOracle);
+        emit OracleUpdated(_newOracle);
+    }
+
+    function setOracleData(bytes32 _newData) external onlyOwner {
+        oracleData = _newData;
+        emit OracleDataUpdated(_newData);
+    }
+
+    function setMinDebtAmount(uint256 _newMinDebtAmount) external onlyOwner {
+        minDebtAmount = _newMinDebtAmount;
+        emit MinDebtAmountUpdated(_newMinDebtAmount);
     }
 }
