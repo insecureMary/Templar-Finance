@@ -27,4 +27,8 @@ contract TUSDManager is ITUSDManager {
         TUSD = ITemplarUsd(_TUSD);
         manager = IManager(_manager);
     }
+
+    function depositCollateral(address account, address token, uint256 amount) external {
+        require(tokenRegistry[token].isActive, InactiveToken());
+    }
 }
