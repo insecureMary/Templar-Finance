@@ -50,7 +50,7 @@ contract TUSDManager is ITUSDManager {
         _getCollateralManager(token).withdrawCollateral(account, amount);
     }
 
-    function borrow(address account, address token, uint256 amount, uint256 minAmountOut, bool mintToSender) external {
+    function borrow(address account, address token, uint256 amount, uint256 minAmountOut, bool mintToSenders) external {
         require(amount > 0, ZeroAmount());
         require(tokenRegistry[token].isActive, InactiveToken());
 
