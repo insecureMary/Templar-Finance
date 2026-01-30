@@ -4,4 +4,16 @@ pragma solidity 0.8.33;
 interface ICollateralManager {
     //events
     event CollateralDeposited(address indexed account, uint256 indexed amount, address token);
+    event CollateralWithdrawn(address indexed account, uint256 indexed amount, address token);
+
+    //variables
+    struct CollateralManagerConfig {
+        uint256 collateralizationRate;
+        uint256 liquidationBuffer;
+        uint256 liquidatorBonus;
+    }
+
+    function depositCollateral(address, uint256) external;
+    function withdrawCollateral(address account, uint256 amount) external;
+    function getExchangeRate() external view;
 }
