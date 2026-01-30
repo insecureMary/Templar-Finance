@@ -7,6 +7,9 @@ interface ITUSDManager {
 
     struct tokenRegistryInfo {
         bool isActive;
-        address deployedat;
+        address deployedAt;
     }
+
+    //functions
+    function depositCollateral(address account, address token, uint256 amount) external;
 }
