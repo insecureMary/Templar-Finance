@@ -88,6 +88,20 @@ contract TUSDManager is ITUSDManager {
         _getCollateralManager(token).borrow(account, amount);
     }
 
+    function addNewCollateralManager(address manager, address token, bool _isActive) external {
+        require(ICollateralManager(manager).token() == token, InvalidManagerOrToken());
+        tokenRegistryInfo memory info;
+        info.isActive = _isActive;
+
+        if (tokenRegistry[token].deployedAt == address(0)) {
+            info.deployedAt = manager;
+            appManager.addWithdrawableToken(token);
+        } else {
+            info.deployedAt = manager;
+        }
+        tokenRegistry[token] = info;
+    }
+
     function isAccountSolvent(address token, address account) public returns (bool) {
         ICollateralManager manager = _getCollateralManager(token);
 

@@ -10,6 +10,7 @@ interface ITUSDManager {
     error MintAmountIsLessThanSlippage();
     error ZeroAddress();
     error WrongAmount();
+    error InvalidManagerOrToken();
 
     struct tokenRegistryInfo {
         bool isActive;
