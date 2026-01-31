@@ -8,6 +8,10 @@ interface ICollateralManager {
     event TUSDBorrowed(address indexed account, uint256 indexed amount, address token);
     event TUSDRepayed(address indexed account, uint256 indexed amount, address token);
 
+    //errors
+    error StateData();
+    error ZeroRate();
+
     //variables
     struct CollateralManagerConfig {
         uint256 collateralizationRate;
