@@ -29,11 +29,26 @@ contract collateralManager is ICollateralManager, Ownable {
         config = _config;
     }
 
+    /**
+     * @notice Deposit collateral into the manager
+     *
+     * @param account The account to deposit collateral for
+     * @param amount The amount of collateral to deposit
+     *
+     */
     function depositCollateral(address account, uint256 amount) external {
         collateralDeposited[account] += amount;
         emit CollateralDeposited(account, amount, address(this));
     }
 
+    /**
+     * @notice Withdraw collateral from the manager
+     *
+     * @param account The account to withdraw collateral for
+     * @param amount The amount of collateral to withdraw
+     *
+     *
+     */
     function withdrawCollateral(address account, uint256 amount) external {
         collateralDeposited[account] -= amount;
         emit CollateralWithdrawn(account, amount, address(this));

@@ -41,18 +41,47 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
     }
 
     //CORE FUNCTIONS
-
+    /**
+     * @notice Deposit collateral into the collateral manager linked to the token
+     *
+     * @param account The depositor account
+     * @param token  Token address that is linked to collateral manager
+     * @param amount amount to deposit
+     *
+     * @dev only callable by authorized managers and checks that token is active
+     *
+     */
     function depositCollateral(address account, address token, uint256 amount) external onlyManagers {
         require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).depositCollateral(account, amount);
     }
 
+    /**
+     * @notice Withdraw collateral from the collateral manager linked to the token
+     *
+     * @param account The withdrawer account
+     * @param token  Token address that is linked to collateral manager
+     * @param amount amount to withdraw
+     *
+     * @dev only callable by authorized managers and checks that token is active and account remains solvent after withdraw
+     *
+     */
     function withdrawCollateral(address account, address token, uint256 amount) external onlyManagers whenNotPaused {
         require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
         require(isAccountSolvent(token, account), Insolvent());
     }
 
+    /**
+     * @notice Force withdraw collateral from the collateral manager linked to the token
+     *
+     * @param account The withdrawer account
+     * @param token  Token address that is linked to collateral manager
+     * @param amount amount to withdraw
+     *
+     * @dev only callable by liquidation manager during liquidations and checks that token is active
+     *
+     */
     function forceWithdrawCollateral(address account, address token, uint256 amount) external whenNotPaused {
         //sanity checks
         require(msg.sender == appManager.liquidationManager(), Unauthorized());
@@ -60,6 +89,18 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
         _getCollateralManager(token).withdrawCollateral(account, amount);
     }
 
+    /**
+     * @notice Borrow TUSD against collateral deposited
+     *
+     * @param account The borrower account
+     * @param token  Token address that is linked to collateral manager
+     * @param amount amount to borrow
+     * @param minAmountOut minimum amount expected after slippage
+     * @param mintToSender boolean to indicate if minted TUSD should go to sender or the account
+     *
+     * @dev only callable by authorized managers and checks that token is active and account remains solvent after borrow
+     *
+     */
     function borrow(address account, address token, uint256 amount, uint256 minAmountOut, bool mintToSender) external onlyManagers whenNotPaused {
         require(amount > 0, ZeroAmount());
         require(tokenRegistry[token].isActive, InactiveToken());
@@ -81,6 +122,17 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
         require(isAccountSolvent(token, account), Insolvent());
     }
 
+    /**
+     * @notice Repay borrowed TUSD
+     *
+     * @param account The borrower account
+     * @param token  Token address that is linked to collateral manager
+     * @param amount amount to repay
+     * @param burnFrom address from which TUSD will be burned
+     *
+     * @dev only callable by authorized managers and checks that token is active
+     *
+     */
     function repay(address account, address token, uint256 amount, address burnFrom) external onlyManagers {
         //get manager
         ICollateralManager collateralManager = ICollateralManager(token);
@@ -97,6 +149,16 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
         _getCollateralManager(token).borrow(account, amount);
     }
 
+    /**
+     * @notice Add new collateral manager to the registry
+     *
+     * @param manager The collateral manager address
+     * @param token  Token address that is linked to collateral manager
+     * @param _isActive boolean to set if the token is active or not
+     *
+     * @dev only callable by owner and checks that token linked to manager is correct
+     *
+     */
     function addNewCollateralManager(address manager, address token, bool _isActive) external onlyOwner {
         require(ICollateralManager(manager).token() == token, InvalidManagerOrToken());
         tokenRegistryInfo memory info;
@@ -112,7 +174,6 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
     }
 
     //HELPER FUNCTIONS
-
     function isAccountSolvent(address token, address account) public view returns (bool) {
         ICollateralManager manager = _getCollateralManager(token);
 
