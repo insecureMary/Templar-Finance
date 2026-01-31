@@ -115,7 +115,21 @@ contract TUSDManager is ITUSDManager {
         return collateralizationRatio >= manager.borrowed(account);
     }
 
-    function getCollaterizationRatio(address token, address account, uint256 rate) public returns (uint256) {
+    function isLiquidatable(address account, address token) public view returns (bool) {
+        ICollateralManager manager = _getCollateralManager(token);
+
+        //if account has not borrow, just return 0;
+        if (manager.borrowed(account) == 0) {
+            return true;
+        }
+
+        //get liquidation ratio
+        ICollateralManager.CollateralManagerConfig memory managerConfig = manager.getConfig();
+        uint256 liquidationRate = managerConfig.collateralizationRate + managerConfig.liquidationBuffer;
+        return manager.borrowed(account).mulDiv(1, appManager.EXCHANGE_RATE_PRECISION()) > getCollaterizationRatio(token, account, liquidationRate);
+    }
+
+    function getCollaterizationRatio(address token, address account, uint256 rate) public view returns (uint256) {
         ICollateralManager collateralManager = ICollateralManager(token);
         uint256 collateralAmount = collateralManager.collateralDeposited(account);
         uint256 exchangeRate = collateralManager.getExchangeRate();
