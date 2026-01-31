@@ -11,6 +11,7 @@ interface ITUSDManager {
     error ZeroAddress();
     error WrongAmount();
     error InvalidManagerOrToken();
+    error UnAuthorized();
 
     struct tokenRegistryInfo {
         bool isActive;
