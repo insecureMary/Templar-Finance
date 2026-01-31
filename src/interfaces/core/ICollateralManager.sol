@@ -21,5 +21,6 @@ interface ICollateralManager {
     function getExchangeRate() external view returns (uint256);
     function borrowed(address account) external returns (uint256 amount);
     function getConfig() external returns (CollateralManagerConfig memory);
+    function token() external returns (address);
     function borrow(address account, uint256 amount) external;
 }

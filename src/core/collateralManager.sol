@@ -8,6 +8,7 @@ contract collateralManager is ICollateralManager {
     mapping(address account => uint256 amount) public collateralDeposited;
     mapping(address account => uint256 amount) public borrowed;
 
+    address public immutable token;
     CollateralManagerConfig private config;
 
     function depositCollateral(address account, uint256 amount) external {
