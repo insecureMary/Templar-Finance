@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.33;
 
+import {Ownable} from "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {IERC20Metadata} from "../../lib/openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {Pausable} from "../../lib/openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {Math} from "../../lib/openzeppelin-contracts/contracts/utils/math/Math.sol";
 import {IAccountManager} from "../interfaces/core/IAccountManager.sol";
 import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
@@ -9,7 +11,7 @@ import {IManager} from "../interfaces/core/IManager.sol";
 import {ITUSDManager} from "../interfaces/core/ITUSDManager.sol";
 import {ITemplarUsd} from "../interfaces/core/ITemplarUsd.sol";
 
-contract TUSDManager is ITUSDManager {
+contract TUSDManager is ITUSDManager, Ownable, Pausable {
     using Math for uint256;
     //This maps token address to it's own specific tokenManager registry info
     mapping(address token => tokenRegistryInfo) public tokenRegistry;
@@ -28,30 +30,37 @@ contract TUSDManager is ITUSDManager {
      */
     IManager public appManager;
 
-    constructor(address _TUSD, address _manager) {
+    constructor(address _TUSD, address _manager, address owner) Ownable(owner) {
         TUSD = ITemplarUsd(_TUSD);
         appManager = IManager(_manager);
     }
 
-    function depositCollateral(address account, address token, uint256 amount) external {
+    modifier onlyManagers() {
+        require(msg.sender == appManager.accountManager() || msg.sender == appManager.liquidationManager() || msg.sender == appManager.strategyManager(), UnAuthorized());
+        _;
+    }
+
+    //CORE FUNCTIONS
+
+    function depositCollateral(address account, address token, uint256 amount) external onlyManagers {
         require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).depositCollateral(account, amount);
     }
 
-    function withdrawCollateral(address account, address token, uint256 amount) external {
+    function withdrawCollateral(address account, address token, uint256 amount) external onlyManagers whenNotPaused {
         require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
         require(isAccountSolvent(token, account), Insolvent());
     }
 
-    function forceWithdrawCollateral(address account, address token, uint256 amount) external {
+    function forceWithdrawCollateral(address account, address token, uint256 amount) external whenNotPaused {
         //sanity checks
         require(msg.sender == appManager.liquidationManager(), Unauthorized());
         require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
     }
 
-    function borrow(address account, address token, uint256 amount, uint256 minAmountOut, bool mintToSender) external {
+    function borrow(address account, address token, uint256 amount, uint256 minAmountOut, bool mintToSender) external onlyManagers whenNotPaused {
         require(amount > 0, ZeroAmount());
         require(tokenRegistry[token].isActive, InactiveToken());
 
@@ -72,7 +81,7 @@ contract TUSDManager is ITUSDManager {
         require(isAccountSolvent(token, account), Insolvent());
     }
 
-    function repay(address account, address token, uint256 amount, address burnFrom) external {
+    function repay(address account, address token, uint256 amount, address burnFrom) external onlyManagers {
         //get manager
         ICollateralManager collateralManager = ICollateralManager(token);
         //sanity checks
@@ -88,7 +97,7 @@ contract TUSDManager is ITUSDManager {
         _getCollateralManager(token).borrow(account, amount);
     }
 
-    function addNewCollateralManager(address manager, address token, bool _isActive) external {
+    function addNewCollateralManager(address manager, address token, bool _isActive) external onlyOwner {
         require(ICollateralManager(manager).token() == token, InvalidManagerOrToken());
         tokenRegistryInfo memory info;
         info.isActive = _isActive;
@@ -102,7 +111,9 @@ contract TUSDManager is ITUSDManager {
         tokenRegistry[token] = info;
     }
 
-    function isAccountSolvent(address token, address account) public returns (bool) {
+    //HELPER FUNCTIONS
+
+    function isAccountSolvent(address token, address account) public view returns (bool) {
         ICollateralManager manager = _getCollateralManager(token);
 
         //if account has not borrow, just return 0;
@@ -161,5 +172,23 @@ contract TUSDManager is ITUSDManager {
 
     function _getCollateralManager(address token) private view returns (ICollateralManager) {
         return ICollateralManager(tokenRegistry[token].deployedAt);
+    }
+
+    function pause() external onlyOwner whenNotPaused {
+        _pause();
+    }
+
+    /**
+     * @notice Returns to normal state.
+     */
+    function unpause() external onlyOwner whenPaused {
+        _unpause();
+    }
+
+    /**
+     * @notice Override to avoid losing contract ownership.
+     */
+    function renounceOwnership() public pure override {
+        revert("1000");
     }
 }
