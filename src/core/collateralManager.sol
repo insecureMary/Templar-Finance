@@ -33,5 +33,5 @@ contract collateralManager is ICollateralManager {
 
     function getExchangeRate() public view returns (uint256 rate) {}
 
-    function getConfig() public returns (CollateralManagerConfig memory) {}
+    function getConfig() public view returns (CollateralManagerConfig memory) {}
 }
