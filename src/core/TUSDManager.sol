@@ -41,7 +41,7 @@ contract TUSDManager is ITUSDManager {
     function withdrawCollateral(address account, address token, uint256 amount) external {
         require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
-        require(!isAccountSolvent(token, account), Insolvent());
+        require(isAccountSolvent(token, account), Insolvent());
     }
 
     function forceWithdrawCollateral(address account, address token, uint256 amount) external {
@@ -64,10 +64,28 @@ contract TUSDManager is ITUSDManager {
         require(mintAmount >= minAmountOut, MintAmountIsLessThanSlippage());
 
         //update state and mint
-        totalBorrowedTUSD[token] += mintAmount;
-        _getCollateralManager(token).borrow(account, amount);
         address receiver = mintToSender ? IAccountManager(account).accountToUser(account) : account;
         TUSD.mint(receiver, mintAmount);
+        totalBorrowedTUSD[token] += mintAmount;
+        _getCollateralManager(token).borrow(account, amount);
+        //solvency check
+        require(isAccountSolvent(token, account), Insolvent());
+    }
+
+    function repay(address account, address token, uint256 amount, address burnFrom) external {
+        //get manager
+        ICollateralManager collateralManager = ICollateralManager(token);
+        //sanity checks
+        require(amount > 0, ZeroAmount());
+        require(tokenRegistry[token].isActive, InactiveToken());
+        require(burnFrom != address(0), ZeroAddress());
+        require(collateralManager.borrowed(account) > 0, ZeroAmount());
+        require(collateralManager.borrowed(account) >= amount, WrongAmount());
+
+        //update state and burn
+        TUSD.burn(burnFrom, amount);
+        totalBorrowedTUSD[token] -= amount;
+        _getCollateralManager(token).borrow(account, amount);
     }
 
     function isAccountSolvent(address token, address account) public returns (bool) {

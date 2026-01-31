@@ -8,6 +8,8 @@ interface ITUSDManager {
     error Unauthorized();
     error ZeroAmount();
     error MintAmountIsLessThanSlippage();
+    error ZeroAddress();
+    error WrongAmount();
 
     struct tokenRegistryInfo {
         bool isActive;

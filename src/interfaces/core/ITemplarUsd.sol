@@ -3,4 +3,5 @@ pragma solidity 0.8.33;
 
 interface ITemplarUsd {
     function mint(address account, uint256 amount) external;
+    function burn(address account, uint256 amount) external;
 }
