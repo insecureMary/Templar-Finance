@@ -6,6 +6,7 @@ interface ICollateralManager {
     event CollateralDeposited(address indexed account, uint256 indexed amount, address token);
     event CollateralWithdrawn(address indexed account, uint256 indexed amount, address token);
     event TUSDBorrowed(address indexed account, uint256 indexed amount, address token);
+    event TUSDRepayed(address indexed account, uint256 indexed amount, address token);
 
     //variables
     struct CollateralManagerConfig {
