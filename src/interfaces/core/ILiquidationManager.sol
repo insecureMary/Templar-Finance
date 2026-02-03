@@ -10,6 +10,7 @@ interface ILiquidationManager {
     error InvalidAmount();
     error InvalidSlippage();
     error ZeroAmount();
+    error SlippageRevert();
 
     struct Swapdata {
         bytes swapPath;

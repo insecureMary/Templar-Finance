@@ -18,6 +18,7 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
     IManager appManager;
     uint256 public constant LIQUIDATION_PRECISION = 1e5;
     uint256 public constant EXCHANGE_RATE_PRECISION = 1e18;
+    uint256 public selfLiquidationFee = 1e4;
 
     constructor(address owner, address _manager) Ownable(owner) {
         appManager = IManager(_manager);
@@ -41,9 +42,19 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
 
         //Get how much collateral is needed to get tusdAmountToLiq accounting for fees
         uint256 collateralInTusd = _getCollateralInTusd(collateral, tusdAmountToLiq, tusdRateInUsd, tusdManager);
+
+        //check slippage
+        uint256 slippageCollateral = collateralInTusd.mulDiv(swap.slippage, LIQUIDATION_PRECISION);
+        require(swap.amountInMaximum <= slippageCollateral, SlippageRevert());
+
+        //calculate fee and get total collateral
+        uint256 fee = collateralInTusd.mulDiv(selfLiquidationFee, LIQUIDATION_PRECISION);
+        uint256 totalCollateralInTusd = collateralInTusd + fee;
+
+        //withdraw from strategies
     }
 
-    function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal returns (uint256) {
+    function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal view returns (uint256) {
         //first convert to collateral based on usd
         uint256 collateralAmount = tusdAmountToLiq.mulDiv(EXCHANGE_RATE_PRECISION, tusdRateInUsd);
         //now put it in jusd term
