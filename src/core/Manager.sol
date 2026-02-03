@@ -34,7 +34,7 @@ contract Manager is IManager, Ownable2Step {
     uint256 public override withdrawalFee;
 
     //CONSTRUCTOR
-    constructor(address _initialOwner, address _oracle, bytes memory _oracleData) Ownable(_initialOwner) isValidAddress(_oracle) {
+    constructor(address _initialOwner, address _oracle, bytes32 _oracleData) Ownable(_initialOwner) isValidAddress(_oracle) {
         tUsdOracle = IOracle(_oracle);
         oracleData = bytes32(_oracleData);
     }
@@ -149,4 +149,12 @@ contract Manager is IManager, Ownable2Step {
         minDebtAmount = _newMinDebtAmount;
         emit MinDebtAmountUpdated(_newMinDebtAmount);
     }
+
+    function getTusdExchangeRate() external view returns (uint256) {
+        (bool updated, uint256 rate) = tUsdOracle.peek(oracleData);
+        require(updated, IManager__Stale());
+        require(rate > 0, IManager__ZeroRate());
+        return rate;
+    }
 }
+

@@ -35,6 +35,8 @@ interface IManager {
     error IManager__TokenAlreadyWithdrawable();
     error IManager__TokenNotWithdrawable();
     error IManager__FeeExceedsMaximum();
+    error IManager__Stale();
+    error IManager__ZeroRate();
 
     //STATE MAPPINGS
     function isContractWhitelisted(address _contractAddress) external view returns (bool);
@@ -88,4 +90,5 @@ interface IManager {
     function setOracle(address _newOracle) external;
     function setOracleData(bytes32 _newData) external;
     function setMinDebtAmount(uint256 _newMinDebtAmount) external;
+    function getTusdExchangeRate() external view returns (uint256);
 }

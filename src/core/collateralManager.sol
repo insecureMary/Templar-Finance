@@ -15,9 +15,9 @@ contract collateralManager is ICollateralManager, Ownable {
     CollateralManagerConfig private config;
     IManager public appManager;
     IOracle public oracle;
-    bytes public oracleData;
+    bytes32 public oracleData;
 
-    constructor(address _initialOwner, address _manager, address _token, address _oracle, bytes memory _oracleData, CollateralManagerConfig memory _config) Ownable(_initialOwner) {
+    constructor(address _initialOwner, address _manager, address _token, address _oracle, bytes32 _oracleData, CollateralManagerConfig memory _config) Ownable(_initialOwner) {
         require(_manager != address(0), "3065");
         require(_token != address(0), "3001");
         require(_oracle != address(0), "3034");
