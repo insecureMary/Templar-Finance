@@ -12,9 +12,12 @@ interface ILiquidationManager {
     error ZeroAmount();
     error SlippageRevert();
     error NotEnoughCollateral();
+    error DifferentLength();
+    error NotLiquidatable();
 
     //events
     event SelfLiquidated(address account, address collateral, uint256 tusdAmountToLiq, uint256 totalCollateralUsed);
+    event Liquidated(address account, address collateral, uint256 tusdAmountToLiq, uint256 totalCollateralUsed);
 
     struct Swapdata {
         bytes swapPath;
@@ -25,6 +28,11 @@ interface ILiquidationManager {
 
     struct Strategiesdata {
         bool useAccountBalance;
+        address[] strategies;
+        bytes[] strategiesData;
+    }
+
+    struct LiqData {
         address[] strategies;
         bytes[] strategiesData;
     }

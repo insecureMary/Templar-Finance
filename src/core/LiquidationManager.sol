@@ -8,6 +8,7 @@ import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IExchangeManager} from "../interfaces/core/IExchangeManager.sol";
 import {ILiquidationManager} from "../interfaces/core/ILiquidationManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
+import {IStrategy} from "../interfaces/core/IStrategy.sol";
 import {IStrategyManager} from "../interfaces/core/IStrategyManager.sol";
 import {ITUSDManager} from "../interfaces/core/ITUSDManager.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -56,7 +57,7 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         //withdraw from strategies
         uint256 collateralInStrategies;
         if (strategies.strategies.length > 0) {
-            collateralInStrategies = _retrieveCollateral(collateral, account, totalCollateralInTusd, strategies.strategies, strategies.strategiesData, strategies.useAccountBalance);
+            collateralInStrategies = _retrieveCollateral(collateral, account, totalCollateralInTusd, strategies.strategies, strategies.strategiesData, strategies.useAccountBalance, strategyManager);
         }
         //what is the total collateral???
         uint256 availableCollateral = strategies.useAccountBalance ? IERC20Metadata(collateral).balanceOf(account) : collateralInStrategies;
@@ -81,6 +82,46 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         emit SelfLiquidated(account, collateral, tusdAmountToLiq, totalCollateralUsed);
     }
 
+    function liquidate(address collateral, address user, uint256 amount, uint256 minCollateralToReceive, LiqData calldata data) external {
+        //Get neccessary details and contracts
+        (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
+        (bool isCollateralActive, address collateralManagerAddress) = tusdManager.tokenRegistryInfo(collateral);
+        address account = accountManager.userToAccount(msg.sender);
+        uint256 totalBorrowed = ICollateralManager(collateralManagerAddress).borrowed(account);
+        uint256 tusdRateInUsd = ICollateralManager(collateralManagerAddress).getExchangeRate();
+
+        //sanity checks
+        require(amount != 0, ZeroAmountToLiq());
+        require(collateral != address(0), ZeroAddress());
+        require(isCollateralActive, InactiveToken());
+        require(tusdManager.isLiquidatable(collateral, account), NotLiquidatable());
+        require(amount <= totalBorrowed, InvalidAmount());
+
+        //Get how much collateral is needed to get tusdAmountToLiq accounting for fees
+        uint256 collateralInTusd = _getCollateralInTusd(collateral, amount, tusdRateInUsd, tusdManager);
+
+        //calculate bonus and add if there is, but none if its msg.sender
+        collateralInTusd += user == msg.sender ? 0 : collateralInTusd.mulDiv(ICollateralManager(collateralManagerAddress).getConfig().liquidatorBonus, LIQUIDATION_PRECISION);
+
+        //withdraw from strategies
+        uint256 collateralInStrategies;
+        if (data.strategies.length > 0) {
+            collateralInStrategies = _retrieveCollateral(collateral, account, collateralInTusd, data.strategies, data.strategiesData, true, strategyManager);
+        }
+
+        //slippage check
+        collateralInTusd = Math.min(IERC20(collateral).balanceOf(account), collateralInTusd);
+        require(collateralInTusd >= minCollateralToReceive, InvalidSlippage());
+
+        //repay the debt, remove collateral and transfer to msg.sender
+        tusdManager.repay(account, collateral, amount, msg.sender);
+        tusdManager.forceWithdrawCollateral(account, collateral, collateralInTusd);
+        IAccount(account).transfer(collateral, msg.sender, collateralInTusd);
+
+        // Emit event indicating liquidation.
+        emit Liquidated(account, collateral, amount, collateralInTusd);
+    }
+
     function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal view returns (uint256) {
         //first convert to collateral based on usd
         uint256 collateralAmount = tusdAmountToLiq.mulDiv(EXCHANGE_RATE_PRECISION, tusdRateInUsd);
@@ -91,7 +132,33 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         return tusdManager.transformTo18Decimals(collateral, collateralAmount);
     }
 
-    function _retrieveCollateral(address collateral, address account, uint256 amount, address[] memory strategies, bytes[] memory data, bool useBalance) internal returns (uint256) {}
+    function _retrieveCollateral(
+        address collateral,
+        address account,
+        uint256 amount,
+        address[] memory strategies,
+        bytes[] memory data,
+        bool useBalance,
+        IStrategyManager strategyManager
+    )
+        internal
+        returns (uint256 retrievedCollateral)
+    {
+        if (useBalance && (IERC20(collateral).balanceOf(account) >= amount)) {
+            return amount;
+        }
+        require(strategies.length == data.length, DifferentLength());
+
+        //iterate over strategies and retrieve their collateral
+        for (uint256 i = 0; i < strategies.length; i++) {
+            (, uint256 shares) = IStrategy(strategies[i]).recipients(account);
+
+            (uint256 withdrawResult,,,) = strategyManager.claimInvestment(account, collateral, strategies[i], shares, data[i]);
+            retrievedCollateral += withdrawResult;
+
+            if (useBalance && IERC20(collateral).balanceOf(account) >= amount) break;
+        }
+    }
 
     function getManagers() public view returns (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) {
         //To avoid reading from storage
