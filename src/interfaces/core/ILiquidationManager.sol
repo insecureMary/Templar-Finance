@@ -13,6 +13,9 @@ interface ILiquidationManager {
     error SlippageRevert();
     error NotEnoughCollateral();
 
+    //events
+    event SelfLiquidated(address account, address collateral, uint256 tusdAmountToLiq, uint256 totalCollateralUsed);
+
     struct Swapdata {
         bytes swapPath;
         uint256 deadline;

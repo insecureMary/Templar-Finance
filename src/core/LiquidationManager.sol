@@ -2,6 +2,7 @@
 pragma solidity 0.8.33;
 
 import {Math} from "../../lib/openzeppelin-contracts/contracts/utils/math/Math.sol";
+import {IAccount} from "../interfaces/core/IAccount.sol";
 import {IAccountManager} from "../interfaces/core/IAccountManager.sol";
 import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IExchangeManager} from "../interfaces/core/IExchangeManager.sol";
@@ -63,6 +64,21 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
 
         //swap initial param to actual Tusd
         uint256 collateralUsedForSwap = exchangeManager.swapExactOutputMultihop(collateral, swap.swapPath, account, swap.deadline, tusdAmountToLiq, swap.amountInMaximum);
+
+        uint256 finalFeeCollateral = collateralUsedForSwap.mulDiv(selfLiquidationFee, EXCHANGE_RATE_PRECISION);
+
+        // Transfer fees to fee address.
+        if (finalFeeCollateral != 0) {
+            IAccount(account).transfer(collateral, appManager.feeAddress(), finalFeeCollateral);
+        }
+        uint256 totalCollateralUsed = collateralUsedForSwap + finalFeeCollateral;
+
+        //repay the debt and remove collateral(incl fees)
+        tusdManager.repay(account, collateral, tusdAmountToLiq, account);
+        tusdManager.withdrawCollateral(account, collateral, totalCollateralUsed);
+
+        // Emit event indicating self-liquidation.
+        emit SelfLiquidated(account, collateral, tusdAmountToLiq, totalCollateralUsed);
     }
 
     function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal view returns (uint256) {

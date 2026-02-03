@@ -23,4 +23,6 @@ interface ITUSDManager {
     function isAccountSolvent(address token, address account) external view returns (bool);
     function tokenRegistryInfo(address token) external view returns (bool, address);
     function transformTo18Decimals(address token, uint256 amount) external view returns (uint256);
+    function repay(address account, address token, uint256 amount, address burnFrom) external;
+    function withdrawCollateral(address account, address token, uint256 amount) external;
 }
