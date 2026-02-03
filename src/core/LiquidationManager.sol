@@ -124,9 +124,9 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
 
     function liquidateBadDebt(address collateral, address user, LiqData calldata data) external {
         //Get neccessary details and contracts
-        (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
+        (IAccountManager accountManager,, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
         (bool isCollateralActive, address collateralManagerAddress) = tusdManager.tokenRegistryInfo(collateral);
-        address account = accountManager.userToAccount(msg.sender);
+        address account = accountManager.userToAccount(user);
         uint256 totalBorrowed = ICollateralManager(collateralManagerAddress).borrowed(account);
         uint256 totalCollateral = ICollateralManager(collateralManagerAddress).collateralDeposited(account);
         uint256 tusdRateInUsd = ICollateralManager(collateralManagerAddress).getExchangeRate();
