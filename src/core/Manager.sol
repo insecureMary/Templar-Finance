@@ -26,7 +26,7 @@ contract Manager is IManager, Ownable2Step {
     address public override liquidationManager;
     address public override templarUsdManager;
     address public override strategyManager;
-    address public override swapManager;
+    address public override exchangeManager;
     address public override feeAddress;
     address public override receiptTokenFactory;
     uint256 public override performanceFee;
@@ -108,9 +108,9 @@ contract Manager is IManager, Ownable2Step {
         emit StrategyManagerUpdated(_newStrategyManager);
     }
 
-    function setSwapManager(address _newSwapManager) external onlyOwner isValidAddress(_newSwapManager) {
-        swapManager = _newSwapManager;
-        emit SwapManagerUpdated(_newSwapManager);
+    function setExchangeManager(address _newExchangeManager) external onlyOwner isValidAddress(_newExchangeManager) {
+        exchangeManager = _newExchangeManager;
+        emit ExchangeManagerUpdated(_newExchangeManager);
     }
 
     function setPerformanceFee(uint256 _newFee) external onlyOwner {

@@ -13,11 +13,13 @@ interface ITUSDManager {
     error InvalidManagerOrToken();
     error UnAuthorized();
 
-    struct tokenRegistryInfo {
+    struct TokenRegistryInfo {
         bool isActive;
         address deployedAt;
     }
 
     //functions
     function depositCollateral(address account, address token, uint256 amount) external;
+    function isAccountSolvent(address token, address account) external view returns (bool);
+    function tokenRegistryInfo(address token) external view returns (bool, address);
 }

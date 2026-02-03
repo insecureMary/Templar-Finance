@@ -16,7 +16,7 @@ interface IManager {
     event LiquidationManagerUpdated(address indexed newLiquidationManager);
     event TemplarUsdManagerUpdated(address indexed newTemplarUsdManager);
     event StrategyManagerUpdated(address indexed newStrategyManager);
-    event SwapManagerUpdated(address indexed newSwapManager);
+    event ExchangeManagerUpdated(address indexed newExchangeManager);
     event PerformanceFeeUpdated(uint256 indexed newFee);
     event WithdrawalFeeUpdated(uint256 indexed newFee);
     event FeeAddressUpdated(address indexed newAddress);
@@ -51,7 +51,7 @@ interface IManager {
     function liquidationManager() external view returns (address);
     function templarUsdManager() external view returns (address);
     function strategyManager() external view returns (address);
-    function swapManager() external view returns (address);
+    function exchangeManager() external view returns (address);
 
     //FEE VARIABLES
     function feeAddress() external view returns (address);
@@ -80,7 +80,7 @@ interface IManager {
     function setLiquidationManager(address _newLiquidationManager) external;
     function setTemplarUsdManager(address _newTemplarUsdManager) external;
     function setStrategyManager(address _newStrategyManager) external;
-    function setSwapManager(address _newSwapManager) external;
+    function setExchangeManager(address _newExchangeManager) external;
     function setPerformanceFee(uint256 _newFee) external;
     function setWithdrawalFee(uint256 _newFee) external;
     function setFeeAddress(address _newFeeAddress) external;
