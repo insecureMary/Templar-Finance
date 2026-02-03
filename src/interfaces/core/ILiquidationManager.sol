@@ -12,6 +12,7 @@ interface ILiquidationManager {
     error ZeroAmount();
     error SlippageRevert();
     error NotEnoughCollateral();
+    error DifferentLength();
 
     //events
     event SelfLiquidated(address account, address collateral, uint256 tusdAmountToLiq, uint256 totalCollateralUsed);

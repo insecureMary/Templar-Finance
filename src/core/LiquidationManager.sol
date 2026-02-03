@@ -8,6 +8,7 @@ import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IExchangeManager} from "../interfaces/core/IExchangeManager.sol";
 import {ILiquidationManager} from "../interfaces/core/ILiquidationManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
+import {IStrategy} from "../interfaces/core/IStrategy.sol";
 import {IStrategyManager} from "../interfaces/core/IStrategyManager.sol";
 import {ITUSDManager} from "../interfaces/core/ITUSDManager.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -56,7 +57,7 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         //withdraw from strategies
         uint256 collateralInStrategies;
         if (strategies.strategies.length > 0) {
-            collateralInStrategies = _retrieveCollateral(collateral, account, totalCollateralInTusd, strategies.strategies, strategies.strategiesData, strategies.useAccountBalance);
+            collateralInStrategies = _retrieveCollateral(collateral, account, totalCollateralInTusd, strategies.strategies, strategies.strategiesData, strategies.useAccountBalance, strategyManager);
         }
         //what is the total collateral???
         uint256 availableCollateral = strategies.useAccountBalance ? IERC20Metadata(collateral).balanceOf(account) : collateralInStrategies;
@@ -91,7 +92,33 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         return tusdManager.transformTo18Decimals(collateral, collateralAmount);
     }
 
-    function _retrieveCollateral(address collateral, address account, uint256 amount, address[] memory strategies, bytes[] memory data, bool useBalance) internal returns (uint256) {}
+    function _retrieveCollateral(
+        address collateral,
+        address account,
+        uint256 amount,
+        address[] memory strategies,
+        bytes[] memory data,
+        bool useBalance,
+        IStrategyManager strategyManager
+    )
+        internal
+        returns (uint256 retrievedCollateral)
+    {
+        if (useBalance && (IERC20(collateral).balanceOf(account) >= amount)) {
+            return amount;
+        }
+        require(strategies.length == data.length, DifferentLength());
+
+        //iterate over strategies and retrieve their collateral
+        for (uint256 i = 0; i < strategies.length; i++) {
+            (, uint256 shares) = IStrategy(strategies[i]).recipients(account);
+
+            (uint256 withdrawResult,,,) = strategyManager.claimInvestment(account, collateral, strategies[i], shares, data[i]);
+            retrievedCollateral += withdrawResult;
+
+            if (useBalance && IERC20(collateral).balanceOf(account) >= amount) break;
+        }
+    }
 
     function getManagers() public view returns (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) {
         //To avoid reading from storage
