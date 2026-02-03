@@ -6,7 +6,7 @@ import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
 import {IOracle} from "../interfaces/oracle/IOracle.sol";
 
-contract collateralManager is ICollateralManager, Ownable {
+contract CollateralManager is ICollateralManager, Ownable {
     //MAPPINGS
     mapping(address account => uint256 amount) public collateralDeposited;
     mapping(address account => uint256 amount) public borrowed;

@@ -9,12 +9,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import {IWeth} from "../IWeth.sol";
 import {IAccount} from "../interfaces/core/IAccount.sol";
 import {IAccountManager} from "../interfaces/core/IAccountManager.sol";
-import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
-import {ISharesRegistry} from "../interfaces/core/ISharesRegistry.sol";
+import {ITUSDManager} from "../interfaces/core/ITUSDManager.sol";
 import {MathOperations} from "../libraries/MathOperations.sol";
 import {Account} from "./Account.sol";
 
@@ -54,10 +52,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
     }
 
     modifier isValidToken(address tokenToCheck) {
-        // require(
-        //     manager.isTokenSupported(tokenToCheck),
-        //     IAccountManager__TokenNotWhitelisted()
-        // );
+        require(manager.isTokenWhitelisted(tokenToCheck), IAccountManager__TokenNotWhitelisted());
         _;
     }
 
@@ -65,19 +60,16 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
 
     function createAccount() external override nonReentrant whenNotPaused returns (address) {
         require(userToAccount[msg.sender] == address(0), IAccountManager__AccountAlreadyExists());
-        // if (msg.sender != tx.origin) {
-        //     require(
-        //         manager.isContractWhitelisted(msg.sender),
-        //         IAccountManager__ContractNotWhitelisted()
-        //     );
-        // }
+        if (msg.sender != tx.origin) {
+            require(manager.isContractWhitelisted(msg.sender), IAccountManager__ContractNotWhitelisted());
+        }
         address newAccountAddress = Clones.clone(accountDummyImpl);
         isAccount[newAccountAddress] = true;
         userToAccount[msg.sender] = newAccountAddress;
         accountToUser[newAccountAddress] = msg.sender;
 
         Account newAccount = Account(newAccountAddress);
-        // newAccount.initialize(address(manager));
+        newAccount.initialize(address(manager));
         emit AccountCreated(newAccountAddress, msg.sender);
         return newAccountAddress;
     }
@@ -85,7 +77,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
     function deposit(address _token, uint256 _amount) external nonReentrant whenNotPaused isValidToken(_token) isValidAmount(_amount) isValidAccount(userToAccount[msg.sender]) {
         address sender = msg.sender;
         address account = userToAccount[sender];
-        //_getCollateralManager().addCollateral(account, _token, _amount);
+        _getTUSDManager().depositCollateral(account, _token, _amount);
         IERC20(_token).safeTransferFrom(sender, account, _amount);
         emit Deposit(account, _token, _amount);
     }
@@ -93,42 +85,44 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
     function withdraw(address _token, uint256 _amount) external nonReentrant whenNotPaused isValidToken(_token) isValidAmount(_amount) isValidAccount(userToAccount[msg.sender]) {
         address sender = msg.sender;
         address account = userToAccount[sender];
-        //require(manager.canWithdrawToken(_token), IAccountManager__CannotWithdrawToken());
+        require(manager.canWithdrawToken(_token), IAccountManager__CannotWithdrawToken());
         //checking if this token was airdropped or user has actual collateral for the token
-        //(, address tokenInRegistry) = _getCollateralManager().sharesRegistryInfo(_token);
-        // if (_tokenRegistry != address(0) && ISharesRegistry(_tokenRegistry).collateral(account) > 0){
-        //     _getCollateralManager().removeCollateral(account, _token, _amount);
+        // (, address _tokenRegistry) = _getTUSDManager().sharesRegistryInfo(
+        //     _token
+        // );
+        // if (
+        //     _tokenRegistry != address(0) &&
+        //     ICollateralManager(_tokenRegistry).collateral(account) > 0
+        // ) {
+        //     _getTUSDManager().withdrawCollateral(account, _token, _amount);
         // }
-        // uint256 withdrawalFeeRate = manager.withdrawalFeeRate();
-        // if(withdrawalFeeRate > 0) {
-        //     uint256 withdrawalFeeAmount = MathOperations.getFeeAbsolute(_amount, withdrawalFeeRate);
-        //     if (withdrawalFeeAmount > 0){
-        //         account.transfer(_token, manager.feeRecipient(), withdrawalFeeAmount)
-        //     }
-        //     //transfer net amount to user
-        //     account.transfer(_token, sender, _amount - withdrawalFeeAmount);
-        // } else {
-        //     //transfer full amount to user
-        //     account.transfer(_token, sender, _amount);
-        // }
-        //emit Withdrawal(account, _token, _amount, withdrawalFeeAmount);
+        uint256 withdrawalFeeRate = manager.withdrawalFeeRate();
+        if (withdrawalFeeRate > 0) {
+            uint256 withdrawalFeeAmount = MathOperations.getFeeAbsolute(_amount, withdrawalFeeRate, manager.PRECISION_FACTOR());
+            if (withdrawalFeeAmount > 0) {
+                //transfer fee to fee recipient
+                IERC20(_token).safeTransferFrom(sender, manager.feeRecipient(), withdrawalFeeAmount);
+            }
+            //transfer net amount to user
+            IERC20(_token).safeTransfer(sender, _amount - withdrawalFeeAmount);
+
+            emit Withdrawal(account, _token, _amount, withdrawalFeeAmount);
+        } else {
+            //transfer full amount to user
+            IERC20(_token).safeTransfer(sender, _amount);
+            emit Withdrawal(account, _token, _amount, 0);
+        }
     }
 
-    function borrow(
-        address _token,
-        uint256 _amount,
-        uint256 _minTusdToMint,
-        bool mintToUserDirectly
-    )
+    function borrow(address _token, uint256 _amount, uint256 _minTusdToMint, bool mintToUserDirectly)
         external
         nonReentrant
         whenNotPaused
         isValidToken(_token)
         isValidAccount(userToAccount[msg.sender])
-        returns (uint256 tUsdMinted)
     {
         address account = userToAccount[msg.sender];
-        // tUsdMinted = _getCollateralManager().borrow(account, _token, _amount, _minTusdToMint, mintToUserDirectly);
+        _getTUSDManager().borrow(account, _token, _amount, _minTusdToMint, mintToUserDirectly);
         emit Borrowed(account, _token, _amount, mintToUserDirectly);
     }
 
@@ -136,7 +130,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
         address sender = msg.sender;
         address account = userToAccount[sender];
         address _burnFrom = repayFromUserDirectly ? sender : account;
-        // _getCollateralManager().repay(account, _token, _amount, _burnFrom);
+        _getTUSDManager().repay(account, _token, _amount, _burnFrom);
         emit Repaid(account, _token, _amount, repayFromUserDirectly);
     }
 
@@ -150,7 +144,7 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
     }
 
     //PRIVATE FUNCTIONS
-    function _getCollateralManager() private view returns (ICollateralManager) {
-        //return ICollateralManager(manager.CollateralManager());
+    function _getTUSDManager() private view returns (ITUSDManager) {
+        return ITUSDManager(manager.templarUsdManager());
     }
 }

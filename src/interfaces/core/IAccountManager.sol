@@ -45,7 +45,7 @@ interface IAccountManager {
 
     function withdraw(address _token, uint256 _amount) external;
 
-    function borrow(address _token, uint256 _amount, uint256 _minTusdToMint, bool mintToUserDirectly) external returns (uint256 tUsdMinted);
+    function borrow(address _token, uint256 _amount, uint256 _minTusdToMint, bool mintToUserDirectly) external;
 
     function repay(address _token, uint256 _amount, bool repayFromUserDirectly) external;
 

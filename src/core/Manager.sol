@@ -4,10 +4,8 @@ pragma solidity 0.8.33;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-import {ILiquidationManager} from "../interfaces/core/ILiquidationManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
 import {IOracle} from "../interfaces/oracle/IOracle.sol";
-import {MathOperations} from "../libraries/MathOperations.sol";
 
 contract Manager is IManager, Ownable2Step {
     // IMMUTABLE VARIABLES
@@ -18,7 +16,7 @@ contract Manager is IManager, Ownable2Step {
     // STATE VARIABLES
     mapping(address => bool) public override isContractWhitelisted;
     mapping(address => bool) public override isTokenWhitelisted;
-    mapping(address => bool) public override isWithdrawableToken;
+    mapping(address => bool) public override canWithdrawToken;
     mapping(address => bool) public override isInvoker;
     IOracle public override tUsdOracle;
     bytes32 public override oracleData;
@@ -27,11 +25,11 @@ contract Manager is IManager, Ownable2Step {
     address public override templarUsdManager;
     address public override strategyManager;
     address public override exchangeManager;
-    address public override feeAddress;
+    address public override feeRecipient;
     address public override receiptTokenFactory;
     uint256 public override performanceFee;
     uint256 public override minDebtAmount;
-    uint256 public override withdrawalFee;
+    uint256 public override withdrawalFeeRate;
 
     //CONSTRUCTOR
     constructor(address _initialOwner, address _oracle, bytes32 _oracleData) Ownable(_initialOwner) isValidAddress(_oracle) {
@@ -72,14 +70,14 @@ contract Manager is IManager, Ownable2Step {
 
     function addWithdrawableToken(address _tokenAddress) external isValidAddress(_tokenAddress) {
         require(msg.sender == owner() || msg.sender == templarUsdManager, IManager__UnauthorisedCaller());
-        require(!isWithdrawableToken[_tokenAddress], IManager__TokenAlreadyWithdrawable());
-        isWithdrawableToken[_tokenAddress] = true;
+        require(!canWithdrawToken[_tokenAddress], IManager__TokenAlreadyWithdrawable());
+        canWithdrawToken[_tokenAddress] = true;
         emit WithdrawableTokenAdded(_tokenAddress);
     }
 
     function removeWithdrawableToken(address _tokenAddress) external onlyOwner {
-        require(isWithdrawableToken[_tokenAddress], IManager__TokenNotWithdrawable());
-        isWithdrawableToken[_tokenAddress] = false;
+        require(canWithdrawToken[_tokenAddress], IManager__TokenNotWithdrawable());
+        canWithdrawToken[_tokenAddress] = false;
         emit WithdrawableTokenRemoved(_tokenAddress);
     }
 
@@ -119,15 +117,15 @@ contract Manager is IManager, Ownable2Step {
         emit PerformanceFeeUpdated(_newFee);
     }
 
-    function setWithdrawalFee(uint256 _newFee) external onlyOwner {
-        require(_newFee <= MAX_WITHDRAWAL_FEE, IManager__FeeExceedsMaximum());
-        withdrawalFee = _newFee;
-        emit WithdrawalFeeUpdated(_newFee);
+    function setwithdrawalFeeRate(uint256 _newFeeRate) external onlyOwner {
+        require(_newFeeRate <= MAX_WITHDRAWAL_FEE, IManager__FeeExceedsMaximum());
+        withdrawalFeeRate = _newFeeRate;
+        emit withdrawalFeeRateUpdated(_newFeeRate);
     }
 
-    function setFeeAddress(address _newFeeAddress) external onlyOwner isValidAddress(_newFeeAddress) {
-        feeAddress = _newFeeAddress;
-        emit FeeAddressUpdated(_newFeeAddress);
+    function setfeeRecipient(address _newfeeRecipient) external onlyOwner isValidAddress(_newfeeRecipient) {
+        feeRecipient = _newfeeRecipient;
+        emit feeRecipientUpdated(_newfeeRecipient);
     }
 
     function setReceiptTokenFactory(address _newFactory) external onlyOwner isValidAddress(_newFactory) {
@@ -157,4 +155,3 @@ contract Manager is IManager, Ownable2Step {
         return rate;
     }
 }
-

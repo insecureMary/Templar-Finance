@@ -18,8 +18,8 @@ interface IManager {
     event StrategyManagerUpdated(address indexed newStrategyManager);
     event ExchangeManagerUpdated(address indexed newExchangeManager);
     event PerformanceFeeUpdated(uint256 indexed newFee);
-    event WithdrawalFeeUpdated(uint256 indexed newFee);
-    event FeeAddressUpdated(address indexed newAddress);
+    event withdrawalFeeRateUpdated(uint256 indexed newFee);
+    event feeRecipientUpdated(address indexed newAddress);
     event ReceiptTokenFactoryUpdated(address indexed newFactory);
     event OracleUpdated(address indexed newOracle);
     event OracleDataUpdated(bytes32 indexed newData);
@@ -41,7 +41,7 @@ interface IManager {
     //STATE MAPPINGS
     function isContractWhitelisted(address _contractAddress) external view returns (bool);
     function isTokenWhitelisted(address _tokenAddress) external view returns (bool);
-    function isWithdrawableToken(address _tokenAddress) external view returns (bool);
+    function canWithdrawToken(address _tokenAddress) external view returns (bool);
     function isInvoker(address _invoker) external view returns (bool);
 
     //ORACLE VARIABLES
@@ -56,10 +56,10 @@ interface IManager {
     function exchangeManager() external view returns (address);
 
     //FEE VARIABLES
-    function feeAddress() external view returns (address);
+    function feeRecipient() external view returns (address);
     function performanceFee() external view returns (uint256);
     function MAX_PERFORMANCE_FEE() external view returns (uint256);
-    function withdrawalFee() external view returns (uint256);
+    function withdrawalFeeRate() external view returns (uint256);
     function MAX_WITHDRAWAL_FEE() external view returns (uint256);
 
     //FACTORY VARIABLES
@@ -84,8 +84,8 @@ interface IManager {
     function setStrategyManager(address _newStrategyManager) external;
     function setExchangeManager(address _newExchangeManager) external;
     function setPerformanceFee(uint256 _newFee) external;
-    function setWithdrawalFee(uint256 _newFee) external;
-    function setFeeAddress(address _newFeeAddress) external;
+    function setwithdrawalFeeRate(uint256 _newFee) external;
+    function setfeeRecipient(address _newfeeRecipient) external;
     function setReceiptTokenFactory(address _newFactory) external;
     function setOracle(address _newOracle) external;
     function setOracleData(bytes32 _newData) external;
