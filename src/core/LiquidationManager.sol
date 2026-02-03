@@ -10,6 +10,7 @@ import {IManager} from "../interfaces/core/IManager.sol";
 import {IStrategyManager} from "../interfaces/core/IStrategyManager.sol";
 import {ITUSDManager} from "../interfaces/core/ITUSDManager.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
@@ -24,7 +25,7 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         appManager = IManager(_manager);
     }
 
-    function selfLiquidate(uint256 tusdAmountToLiq, address collateral, Swapdata calldata swap, Strategiesdata calldata strategies) public nonReentrant {
+    function selfLiquidate(uint256 tusdAmountToLiq, address collateral, Swapdata memory swap, Strategiesdata memory strategies) public nonReentrant {
         //Get neccessary details and contracts
         (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
         (bool isCollateralActive, address collateralManagerAddress) = tusdManager.tokenRegistryInfo(collateral);
@@ -52,6 +53,16 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         uint256 totalCollateralInTusd = collateralInTusd + fee;
 
         //withdraw from strategies
+        uint256 collateralInStrategies;
+        if (strategies.strategies.length > 0) {
+            collateralInStrategies = _retrieveCollateral(collateral, account, totalCollateralInTusd, strategies.strategies, strategies.strategiesData, strategies.useAccountBalance);
+        }
+        //what is the total collateral???
+        uint256 availableCollateral = strategies.useAccountBalance ? IERC20Metadata(collateral).balanceOf(account) : collateralInStrategies;
+        require(availableCollateral >= totalCollateralInTusd, NotEnoughCollateral());
+
+        //swap initial param to actual Tusd
+        uint256 collateralUsedForSwap = exchangeManager.swapExactOutputMultihop(collateral, swap.swapPath, account, swap.deadline, tusdAmountToLiq, swap.amountInMaximum);
     }
 
     function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal view returns (uint256) {
@@ -63,6 +74,8 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         require(collateralAmount > 0, ZeroAmount());
         return tusdManager.transformTo18Decimals(collateral, collateralAmount);
     }
+
+    function _retrieveCollateral(address collateral, address account, uint256 amount, address[] memory strategies, bytes[] memory data, bool useBalance) internal returns (uint256) {}
 
     function getManagers() public view returns (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) {
         //To avoid reading from storage

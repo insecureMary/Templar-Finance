@@ -11,6 +11,7 @@ interface ILiquidationManager {
     error InvalidSlippage();
     error ZeroAmount();
     error SlippageRevert();
+    error NotEnoughCollateral();
 
     struct Swapdata {
         bytes swapPath;
@@ -20,7 +21,7 @@ interface ILiquidationManager {
     }
 
     struct Strategiesdata {
-        bool useHoldingBalance;
+        bool useAccountBalance;
         address[] strategies;
         bytes[] strategiesData;
     }
