@@ -122,6 +122,38 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         emit Liquidated(account, collateral, amount, collateralInTusd);
     }
 
+    function liquidateBadDebt(address collateral, address user, LiqData calldata data) external {
+        //Get neccessary details and contracts
+        (IAccountManager accountManager,, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
+        (bool isCollateralActive, address collateralManagerAddress) = tusdManager.tokenRegistryInfo(collateral);
+        address account = accountManager.userToAccount(user);
+        uint256 totalBorrowed = ICollateralManager(collateralManagerAddress).borrowed(account);
+        uint256 totalCollateral = ICollateralManager(collateralManagerAddress).collateralDeposited(account);
+        uint256 tusdRateInUsd = ICollateralManager(collateralManagerAddress).getExchangeRate();
+
+        //sanity checks
+        require(collateral != address(0), ZeroAddress());
+        require(isCollateralActive, InactiveToken());
+        require(tusdManager.isLiquidatable(collateral, account), NotLiquidatable());
+
+        //withdraw from strategies
+        uint256 collateralInStrategies;
+        if (data.strategies.length > 0) {
+            collateralInStrategies = _retrieveCollateral(collateral, account, totalCollateral, data.strategies, data.strategiesData, true, strategyManager);
+        }
+        totalCollateral = ICollateralManager(collateralManagerAddress).collateralDeposited(account);
+
+        if (totalCollateral >= _getCollateralInTusd(collateral, totalCollateral, tusdRateInUsd, tusdManager)) revert();
+
+        //repay the debt, remove collateral and transfer to msg.sender
+        tusdManager.repay(account, collateral, totalBorrowed, msg.sender);
+        tusdManager.forceWithdrawCollateral(account, collateral, totalCollateral);
+        IAccount(account).transfer(collateral, msg.sender, totalCollateral);
+
+        // Emit event indicating liquidation.
+        emit BadDebtLiquidated(account, collateral, totalBorrowed, totalCollateral);
+    }
+
     function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal view returns (uint256) {
         //first convert to collateral based on usd
         uint256 collateralAmount = tusdAmountToLiq.mulDiv(EXCHANGE_RATE_PRECISION, tusdRateInUsd);
