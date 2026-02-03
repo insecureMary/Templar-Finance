@@ -144,7 +144,7 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
         require(collateralManager.borrowed(account) >= amount, WrongAmount());
 
         //update state and burn
-        TUSD.burn(burnFrom, amount);
+        TUSD.burnFrom(burnFrom, amount);
         totalBorrowedTUSD[token] -= amount;
         _getCollateralManager(token).borrow(account, amount);
     }

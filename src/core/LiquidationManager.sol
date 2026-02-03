@@ -70,7 +70,7 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
 
         // Transfer fees to fee address.
         if (finalFeeCollateral != 0) {
-            IAccount(account).transfer(collateral, appManager.feeAddress(), finalFeeCollateral);
+            IAccount(account).transfer(collateral, appManager.feeRecipient(), finalFeeCollateral);
         }
         uint256 totalCollateralUsed = collateralUsedForSwap + finalFeeCollateral;
 
@@ -156,7 +156,9 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
             (uint256 withdrawResult,,,) = strategyManager.claimInvestment(account, collateral, strategies[i], shares, data[i]);
             retrievedCollateral += withdrawResult;
 
-            if (useBalance && IERC20(collateral).balanceOf(account) >= amount) break;
+            if (useBalance && IERC20(collateral).balanceOf(account) >= amount) {
+                break;
+            }
         }
     }
 
