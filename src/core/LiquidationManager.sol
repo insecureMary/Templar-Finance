@@ -115,7 +115,7 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
 
         //repay the debt, remove collateral and transfer to msg.sender
         tusdManager.repay(account, collateral, amount, msg.sender);
-        tusdManager.forcewithdrawCollateral(account, collateral, collateralInTusd);
+        tusdManager.forceWithdrawCollateral(account, collateral, collateralInTusd);
         IAccount(account).transfer(collateral, msg.sender, collateralInTusd);
 
         // Emit event indicating liquidation.
