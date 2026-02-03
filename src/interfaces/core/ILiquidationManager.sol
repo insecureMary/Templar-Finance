@@ -18,6 +18,7 @@ interface ILiquidationManager {
     //events
     event SelfLiquidated(address account, address collateral, uint256 tusdAmountToLiq, uint256 totalCollateralUsed);
     event Liquidated(address account, address collateral, uint256 tusdAmountToLiq, uint256 totalCollateralUsed);
+    event BadDebtLiquidated(address account, address collateral, uint256 tusdAmountToLiq, uint256 totalCollateralUsed);
 
     struct Swapdata {
         bytes swapPath;
