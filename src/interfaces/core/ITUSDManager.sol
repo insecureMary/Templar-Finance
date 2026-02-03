@@ -22,4 +22,5 @@ interface ITUSDManager {
     function depositCollateral(address account, address token, uint256 amount) external;
     function isAccountSolvent(address token, address account) external view returns (bool);
     function tokenRegistryInfo(address token) external view returns (bool, address);
+    function transformTo18Decimals(address token, uint256 amount) external view returns (uint256);
 }

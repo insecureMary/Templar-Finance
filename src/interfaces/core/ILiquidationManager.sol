@@ -7,6 +7,9 @@ interface ILiquidationManager {
     error ZeroAddress();
     error InactiveToken();
     error Insolvent();
+    error InvalidAmount();
+    error InvalidSlippage();
+    error ZeroAmount();
 
     struct Swapdata {
         bytes swapPath;
