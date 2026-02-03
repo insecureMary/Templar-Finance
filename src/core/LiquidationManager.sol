@@ -82,6 +82,28 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         emit SelfLiquidated(account, collateral, tusdAmountToLiq, totalCollateralUsed);
     }
 
+    function liquidate(address collateral, address user, uint256 amount, uint256 minCollateralToReceive, LiqData calldata data) external view {
+        //Get neccessary details and contracts
+        (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
+        (bool isCollateralActive, address collateralManagerAddress) = tusdManager.tokenRegistryInfo(collateral);
+        address account = accountManager.userToAccount(msg.sender);
+        uint256 totalBorrowed = ICollateralManager(collateralManagerAddress).borrowed(account);
+        uint256 tusdRateInUsd = ICollateralManager(collateralManagerAddress).getExchangeRate();
+
+        //sanity checks
+        require(amount != 0, ZeroAmountToLiq());
+        require(collateral != address(0), ZeroAddress());
+        require(isCollateralActive, InactiveToken());
+        require(tusdManager.isLiquidatable(collateral, account), NotLiquidatable());
+        require(amount <= totalBorrowed, InvalidAmount());
+
+        //Get how much collateral is needed to get tusdAmountToLiq accounting for fees
+        uint256 collateralInTusd = _getCollateralInTusd(collateral, amount, tusdRateInUsd, tusdManager);
+
+        //calculate bonus and add if there is, but none if its msg.sender
+        collateralInTusd += user == msg.sender ? 0 : collateralInTusd.mulDiv(ICollateralManager(collateralManagerAddress).getConfig().liquidatorBonus, LIQUIDATION_PRECISION);
+    }
+
     function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal view returns (uint256) {
         //first convert to collateral based on usd
         uint256 collateralAmount = tusdAmountToLiq.mulDiv(EXCHANGE_RATE_PRECISION, tusdRateInUsd);
