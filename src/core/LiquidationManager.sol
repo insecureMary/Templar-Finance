@@ -27,6 +27,15 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         appManager = IManager(_manager);
     }
 
+    /**
+     * @notice Self-liquidate to avoid getting liquidated by others. You can choose to pull from your strategies and pay a fee to reduce the amount of collateral you lose.
+     *
+     * @param tusdAmountToLiq The amount of TUSD you want to get liquidated for
+     * @param collateral The collateral you want to get liquidated
+     * @param swap The swap data for the exchange manager to execute the swap
+     * @param strategies The strategies data to withdraw collateral from
+     *
+     */
     function selfLiquidate(uint256 tusdAmountToLiq, address collateral, Swapdata memory swap, Strategiesdata memory strategies) public nonReentrant {
         //Get neccessary details and contracts
         (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
@@ -82,6 +91,16 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         emit SelfLiquidated(account, collateral, tusdAmountToLiq, totalCollateralUsed);
     }
 
+    /**
+     * @notice Liquidate an undercollateralized account
+     *
+     * @param collateral The collateral to liquidate
+     * @param user The user to liquidate
+     * @param amount The amount of TUSD to liquidate
+     * @param minCollateralToReceive The minimum amount of collateral to receive after liquidation
+     * @param data The liquidation data including strategies to withdraw from
+     *
+     */
     function liquidate(address collateral, address user, uint256 amount, uint256 minCollateralToReceive, LiqData calldata data) external {
         //Get neccessary details and contracts
         (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
@@ -122,7 +141,15 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         emit Liquidated(account, collateral, amount, collateralInTusd);
     }
 
-    function liquidateBadDebt(address collateral, address user, LiqData calldata data) external {
+    /**
+     * @notice Liquidate an account that has bad debt (no collateral left)
+     *
+     * @param collateral The collateral to liquidate
+     * @param user The user to liquidate
+     * @param data The liquidation data including strategies to withdraw from
+     *
+     */
+    function liquidateBadDebt(address collateral, address user, LiqData calldata data) external nonReentrant onlyOwner {
         //Get neccessary details and contracts
         (IAccountManager accountManager,, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
         (bool isCollateralActive, address collateralManagerAddress) = tusdManager.tokenRegistryInfo(collateral);
@@ -199,5 +226,13 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         exchangeManager = IExchangeManager(manager.exchangeManager());
         tusdManager = ITUSDManager(manager.templarUsdManager());
         strategyManager = IStrategyManager(manager.strategyManager());
+    }
+
+    function setSelfLiquidationFee(uint256 amount) external onlyOwner {
+        selfLiquidationFee = amount;
+    }
+
+    function renounceOwnership() public pure override {
+        revert();
     }
 }
