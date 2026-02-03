@@ -26,4 +26,5 @@ interface ITUSDManager {
     function repay(address account, address token, uint256 amount, address burnFrom) external;
     function withdrawCollateral(address account, address token, uint256 amount) external;
     function isLiquidatable(address account, address token) external view returns (bool);
+    function forcewithdrawCollateral(address account, address token, uint256 amount) external;
 }

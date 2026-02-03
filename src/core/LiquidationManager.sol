@@ -82,7 +82,7 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
         emit SelfLiquidated(account, collateral, tusdAmountToLiq, totalCollateralUsed);
     }
 
-    function liquidate(address collateral, address user, uint256 amount, uint256 minCollateralToReceive, LiqData calldata data) external view {
+    function liquidate(address collateral, address user, uint256 amount, uint256 minCollateralToReceive, LiqData calldata data) external {
         //Get neccessary details and contracts
         (IAccountManager accountManager, IExchangeManager exchangeManager, ITUSDManager tusdManager, IStrategyManager strategyManager) = getManagers();
         (bool isCollateralActive, address collateralManagerAddress) = tusdManager.tokenRegistryInfo(collateral);
@@ -102,6 +102,24 @@ contract LiquidationManager is ILiquidationManager, Ownable, ReentrancyGuard {
 
         //calculate bonus and add if there is, but none if its msg.sender
         collateralInTusd += user == msg.sender ? 0 : collateralInTusd.mulDiv(ICollateralManager(collateralManagerAddress).getConfig().liquidatorBonus, LIQUIDATION_PRECISION);
+
+        //withdraw from strategies
+        uint256 collateralInStrategies;
+        if (data.strategies.length > 0) {
+            collateralInStrategies = _retrieveCollateral(collateral, account, collateralInTusd, data.strategies, data.strategiesData, true, strategyManager);
+        }
+
+        //slippage check
+        collateralInTusd = Math.min(IERC20(collateral).balanceOf(account), collateralInTusd);
+        require(collateralInTusd >= minCollateralToReceive, InvalidSlippage());
+
+        //repay the debt, remove collateral and transfer to msg.sender
+        tusdManager.repay(account, collateral, amount, msg.sender);
+        tusdManager.forcewithdrawCollateral(account, collateral, collateralInTusd);
+        IAccount(account).transfer(collateral, msg.sender, collateralInTusd);
+
+        // Emit event indicating liquidation.
+        emit Liquidated(account, collateral, amount, collateralInTusd);
     }
 
     function _getCollateralInTusd(address collateral, uint256 tusdAmountToLiq, uint256 tusdRateInUsd, ITUSDManager tusdManager) internal view returns (uint256) {
