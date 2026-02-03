@@ -14,7 +14,7 @@ import {ITemplarUsd} from "../interfaces/core/ITemplarUsd.sol";
 contract TUSDManager is ITUSDManager, Ownable, Pausable {
     using Math for uint256;
     //This maps token address to it's own specific tokenManager registry info
-    mapping(address token => tokenRegistryInfo) public tokenRegistry;
+    mapping(address => TokenRegistryInfo) public tokenRegistry;
 
     /* This maps token address to total borrowed TUSD against that token as collateral
      */
@@ -161,7 +161,7 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
      */
     function addNewCollateralManager(address manager, address token, bool _isActive) external onlyOwner {
         require(ICollateralManager(manager).token() == token, InvalidManagerOrToken());
-        tokenRegistryInfo memory info;
+        TokenRegistryInfo memory info;
         info.isActive = _isActive;
 
         if (tokenRegistry[token].deployedAt == address(0)) {
@@ -251,5 +251,11 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
      */
     function renounceOwnership() public pure override {
         revert("1000");
+    }
+
+    function tokenRegistryInfo(address token) public view returns (bool isActive, address collateralManager) {
+        TokenRegistryInfo memory _tokenRegistryInfo = tokenRegistry[token];
+        isActive = _tokenRegistryInfo.isActive;
+        collateralManager = _tokenRegistryInfo.deployedAt;
     }
 }
