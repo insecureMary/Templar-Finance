@@ -11,9 +11,11 @@ import {MathOperations} from "../../libraries/MathOperations.sol";
 import {BaseStrategy} from "../BaseStrategy.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
     using SafeERC20 for IERC20;
+    using SafeCast for uint256;
 
     mapping(address recipient => IStrategy.RecipientInfo info) public override recipients;
     address public feeManager;
@@ -68,5 +70,18 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
 
         uint256 balanceBefore = IERC20(tokenIn).balanceOf(recipient);
         _genericCall(recipient, address(lendingPool), abi.encodeCall(IPool.withdraw, (asset, assetsToWithdraw, recipient)));
+
+        uint256 withdrawnAmount = IERC20(tokenIn).balanceOf(recipient) - balanceBefore;
+        int256 yield = withdrawnAmount.toInt256() - investment.toInt256();
+
+        if (yield > 0) {
+            uint256 fee = _takePerformanceFee(tokenIn, recipient, uint256(yield));
+            if (fee > 0) {
+                withdrawnAmount -= fee;
+                yield -= fee.toInt256();
+            }
+        }
+        recipients[recipient].totalShares -= shares;
+        recipients[recipient].investedAmount = investment > recipients[recipient].investedAmount ? 0 : recipients[recipient].investedAmount - investment;
     }
 }

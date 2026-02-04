@@ -14,4 +14,6 @@ contract BaseStrategy {
         (success, returnData) = IAccount(account).genericCall(to, call);
         if (!success) revert(MathOperations.getRevertMsg(returnData));
     }
+
+    function _takePerformanceFee(address tokenIn, address recipient, uint256 yield) internal returns (uint256 fees) {}
 }
