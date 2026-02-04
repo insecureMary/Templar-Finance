@@ -13,7 +13,7 @@ import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extens
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
+contract AaveV3Strategy is IStrategy, BaseStrategy {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 
@@ -87,4 +87,6 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
 
         //TO-DO add event
     }
+
+    function claimRewards(address recipient, bytes calldata data) external returns (uint256[] memory, address[] memory) {}
 }
