@@ -8,8 +8,8 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import {IReceiptTokenFactory} from "../interfaces/core/IReceiptTokenAndFactory.sol";
-import {IReceiptToken} from "../interfaces/core/IReceiptTokenAndFactory.sol";
+import {IReceiptTokenFactory} from "../interfaces/core/IReceiptToken.sol";
+import {IReceiptToken} from "../interfaces/core/IReceiptToken.sol";
 
 contract ReceiptTokenFactory is IReceiptTokenFactory, Ownable2Step {
     address public referenceImpl;

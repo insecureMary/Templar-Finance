@@ -2,6 +2,9 @@
 pragma solidity 0.8.33;
 
 interface IStrategy {
+    //errors
+    error IncompatibleAsset();
+
     function recipients(address _recipient) external view returns (uint256 investedAmount, uint256 totalShares);
 
     function tokenIn() external view returns (address);
