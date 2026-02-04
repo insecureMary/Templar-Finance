@@ -3,6 +3,7 @@ pragma solidity 0.8.33;
 
 import {IAccount} from "../interfaces/core/IAccount.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
+import {IStrategyManager} from "../interfaces/core/IStrategyManager.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -34,5 +35,16 @@ contract Account is IAccount, Initializable, ReentrancyGuard {
 
     function transfer(address _token, address _to, uint256 _amount) external {
         IERC20(_token).safeTransfer(_to, _amount);
+    }
+
+    function genericCall(address _contract, bytes calldata _call) external payable nonReentrant onlyAllowed returns (bool success, bytes memory result) {
+        (success, result) = _contract.call{value: msg.value}(_call);
+    }
+
+    modifier onlyAllowed() {
+        (,, bool isStrategyWhitelisted) = IStrategyManager(manager.strategyManager()).strategyInfo(msg.sender);
+
+        require(msg.sender == manager.accountManager() || msg.sender == manager.liquidationManager() || msg.sender == manager.exchangeManager() || isStrategyWhitelisted, "1000");
+        _;
     }
 }

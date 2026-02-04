@@ -40,4 +40,5 @@ interface IStrategyManager {
     )
         external
         returns (uint256 withdrawnAmount, uint256 initialInvestment, int256 yield, uint256 fee);
+    function strategyInfo(address) external view returns (uint256, bool, bool);
 }

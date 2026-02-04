@@ -4,6 +4,10 @@ pragma solidity 0.8.33;
 interface IStrategy {
     //errors
     error IncompatibleAsset();
+    error NotEnoughShares();
+
+    //events
+    event Deposit(address asset, address tokenIn, uint256 amount, uint256 shares, address recipient);
 
     function recipients(address _recipient) external view returns (uint256 investedAmount, uint256 totalShares);
 

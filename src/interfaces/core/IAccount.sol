@@ -24,4 +24,5 @@ interface IAccount {
      */
     function approve(address _token, address _spender, uint256 _amount) external;
     function transfer(address _token, address _to, uint256 _amount) external;
+    function genericCall(address _contract, bytes calldata _call) external payable returns (bool success, bytes memory result);
 }
