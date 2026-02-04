@@ -8,4 +8,9 @@ interface IStrategy {
     function deposit(address token, uint256 amount, address account, bytes calldata data) external returns (uint256, uint256);
     function withdraw(uint256, address, address, bytes calldata) external returns (uint256, uint256, int256, uint256);
     function claimRewards(address account, bytes calldata data) external returns (uint256[] memory rewards, address[] memory token);
+
+    struct RecipientInfo {
+        uint256 investedAmount;
+        uint256 totalShares;
+    }
 }
