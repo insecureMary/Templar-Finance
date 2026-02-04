@@ -28,4 +28,7 @@ interface ITUSDManager {
     function withdrawCollateral(address account, address token, uint256 amount) external;
     function isLiquidatable(address account, address token) external view returns (bool);
     function forceWithdrawCollateral(address account, address token, uint256 amount) external;
+
+    //view functions
+    function getTUSDAddress() external view returns (address);
 }

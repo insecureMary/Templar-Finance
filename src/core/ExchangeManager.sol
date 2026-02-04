@@ -31,19 +31,88 @@ contract ExchangeManager is IExchangeManager, Ownable2Step {
         manager = IManager(_manager);
     }
 
-    //STATE-CHANGING FUNCTIONS
-
-    function swapExactOutputMultihop(address _tokenIn, bytes memory _swapRoute, address _account, uint256 _deadline, uint256 _amountOut, uint256 maxAmountIn) external view override returns (uint256) {
-        require(msg.sender == manager.liquidationManager(), IExchangeManager__Unauthorized());
-
-        SwapExactOutputParams memory tempData =
-            SwapExactOutputParams({tokenIn: _tokenIn, swapRoute: _swapRoute, account: _account, deadline: _deadline, amountOut: _amountOut, maxAmountIn: maxAmountIn, swapRouter: swapRouter});
+    //MODIFIERS
+    modifier isValidAddress(address addr) {
+        require(addr != address(0), IExchangeManager__ZeroAddressNotAllowed());
+        _;
     }
 
+    modifier validPool(bytes calldata path, uint256 amount) {
+        isValidPool(path, amount);
+        _;
+    }
+
+    //STATE-CHANGING FUNCTIONS
+
+    function swapExactOutputMultihop(
+        address _tokenIn,
+        bytes calldata _swapRoute,
+        address _account,
+        uint256 _deadline,
+        uint256 _amountOut,
+        uint256 maxAmountIn
+    )
+        external
+        override
+        validPool(_swapRoute, _amountOut)
+        returns (uint256 amountIn)
+    {
+        require(msg.sender == manager.liquidationManager(), IExchangeManager__Unauthorized());
+
+        SwapExactOutputParams memory varData =
+            SwapExactOutputParams({tokenIn: _tokenIn, swapRoute: _swapRoute, account: _account, deadline: _deadline, amountOut: _amountOut, maxAmountIn: maxAmountIn, swapRouter: swapRouter});
+        //Transferring the maxAmountIn param from the user to this contract
+        IAccount(varData.account).transfer(varData.tokenIn, address(this), varData.maxAmountIn);
+        //Approve the swap router to spend/transfer tokens on behalf of the user account, from address(this)
+        IERC20(varData.tokenIn).forceApprove(address(varData.swapRouter), varData.maxAmountIn);
+        //Populating the exact output swap parameters, to be able to extract as must output with as minimal input
+        ISwapRouter.ExactOutputParams memory outputParams =
+            ISwapRouter.ExactOutputParams({path: varData.swapRoute, recipient: varData.account, deadline: varData.deadline, amountOut: varData.amountOut, amountInMaximum: varData.maxAmountIn});
+
+        //Logic for the actual swapping
+        try ISwapRouter(varData.swapRouter).exactOutput(outputParams) returns (uint256 amountInFinal) {
+            amountIn = amountInFinal;
+        } catch {
+            revert IExchangeManager__SwapFailed();
+        }
+        //Returning any leftover tokens to the user account
+        if (amountIn < varData.maxAmountIn) {
+            //Remove allowance of the swap router before transferring
+            IERC20(varData.tokenIn).forceApprove(address(varData.swapRouter), 0);
+            //Transfer
+            IERC20(varData.tokenIn).safeTransfer(varData.account, varData.maxAmountIn - amountIn);
+        }
+
+        //Emit event after successful swap
+        emit ExactOutputSwapExecuted(varData.account, varData.tokenIn, amountIn, varData.amountOut, varData.swapRoute);
+    }
+
+    //ADMIN FUNCTIONS
     function setSwapRouter(address newRouter) external override onlyOwner {
         require(newRouter != address(0), IExchangeManager__ZeroAddressNotAllowed());
         address previousRouter = swapRouter;
         swapRouter = newRouter;
         emit SwapRouterUpdated(previousRouter, newRouter);
+    }
+
+    //PRIVATE AND INTERNAL FUNCTIONS
+    function _getPool(address tokenA, address tokenB, uint24 fee) internal view returns (address pool) {
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        pool = address(uint160(uint256(keccak256(abi.encodePacked(hex"ff", uniswapFactory, keccak256(abi.encode(token0, token1, fee)), POOL_CREATION_CODE_HASH)))));
+    }
+
+    function isValidPool(bytes calldata _path, uint256 _amount) internal view {
+        //Checking that the path length is valid, using x > 42 as check because the shortest path possible is tokenIn(20) + fee(3) + tokenOut(20) = 43 bytes
+        require(_path.length > 42, IExchangeManager__InvalidSwapRoute());
+        TempIsValidPoolData memory varData = TempIsValidPoolData({
+            TUsd: IERC20(ITUSDManager(manager.templarUsdManager()).getTUSDAddress()),
+            tokenIn: address(bytes20(_path[0:20])),
+            fee: uint24(bytes3(_path[20:23])),
+            tokenOut: address(bytes20(_path[23:43]))
+        });
+
+        require(varData.tokenIn == address(varData.TUsd), IExchangeManager__InvalidSwapRoute());
+
+        require(varData.TUsd.balanceOf(_getPool(varData.tokenIn, varData.tokenOut, varData.fee)) >= _amount, IExchangeManager__InsufficientBalanceInPool());
     }
 }
