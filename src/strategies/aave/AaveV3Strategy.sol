@@ -55,9 +55,11 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
 
     function withdraw(uint256 shares, address recipient, address asset, bytes calldata data) external returns (uint256, uint256, int256, uint256) {
         uint256 totalShares = recipients[recipient].totalShares;
+        uint256 shareDecimal = tokenOutDecimal;
         require(shares <= totalShares, NotEnoughShares());
         require(tokenIn == asset, IncompatibleAsset());
 
         uint256 shareRatio = MathOperations.getRatio(shares, totalShares, tokenOutDecimal, MathOperations.Rounding.Floor);
+        _burn(receiptToken, recipient, shares, totalShares, shareDecimal);
     }
 }
