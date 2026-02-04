@@ -5,6 +5,9 @@ interface IStrategy {
     //errors
     error IncompatibleAsset();
 
+    //events
+    event Deposit(address asset, address tokenIn, uint256 amount, uint256 shares, address recipient);
+
     function recipients(address _recipient) external view returns (uint256 investedAmount, uint256 totalShares);
 
     function tokenIn() external view returns (address);

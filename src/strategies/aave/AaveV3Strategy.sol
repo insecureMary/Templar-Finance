@@ -47,5 +47,8 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
 
         //mint receipt token for user
         _mint(receiptToken, recipient, shares, tokenOutDecimal);
+
+        emit Deposit(asset, tokenIn, amount, shares, recipient);
+        return (shares, amount);
     }
 }
