@@ -7,6 +7,7 @@ import {IRewardsController} from "../../../lib/aave-v3-periphery/contracts/rewar
 import {IAccount} from "../../interfaces/core/IAccount.sol";
 import {IReceiptToken} from "../../interfaces/core/IReceiptToken.sol";
 import {IStrategy} from "../../interfaces/core/IStrategy.sol";
+import {MathOperations} from "../../libraries/MathOperations.sol";
 import {BaseStrategy} from "../BaseStrategy.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -50,5 +51,13 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
 
         emit Deposit(asset, tokenIn, amount, shares, recipient);
         return (shares, amount);
+    }
+
+    function withdraw(uint256 shares, address recipient, address asset, bytes calldata data) external returns (uint256, uint256, int256, uint256) {
+        uint256 totalShares = recipients[recipient].totalShares;
+        require(shares <= totalShares, NotEnoughShares());
+        require(tokenIn == asset, IncompatibleAsset());
+
+        uint256 shareRatio = MathOperations.getRatio(shares, totalShares, tokenOutDecimal, MathOperations.Rounding.Floor);
     }
 }
