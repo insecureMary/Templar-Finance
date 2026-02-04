@@ -258,4 +258,8 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
         isActive = _tokenRegistryInfo.isActive;
         collateralManager = _tokenRegistryInfo.deployedAt;
     }
+
+    function getTUSDAddress() external view override returns (address) {
+        return address(TUSD);
+    }
 }

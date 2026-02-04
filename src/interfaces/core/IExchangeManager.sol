@@ -11,11 +11,14 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 interface IExchangeManager {
     //EVENTS
     event SwapRouterUpdated(address indexed previousRouter, address indexed newRouter);
-    event ExactOutputSwapExecuted(address indexed account, address indexed collateral, uint256 amountIn, uint256 amountOut, bytes swapPath);
+    event ExactOutputSwapExecuted(address indexed account, address indexed token, uint256 amountIn, uint256 amountOut, bytes swapRoute);
 
     //ERRORS
     error IExchangeManager__ZeroAddressNotAllowed();
     error IExchangeManager__Unauthorized();
+    error IExchangeManager__SwapFailed();
+    error IExchangeManager__InvalidSwapRoute();
+    error IExchangeManager__InsufficientBalanceInPool();
 
     //VARIABLES
     struct SwapExactOutputParams {
@@ -28,15 +31,15 @@ interface IExchangeManager {
         address swapRouter;
     }
 
-    struct TempValidPoolData {
+    struct TempIsValidPoolData {
         IERC20 TUsd;
         address tokenIn;
-        address tokenOut;
         uint24 fee;
+        address tokenOut;
     }
 
     // STATE-CHANGING FUNCTIONS
-    function swapExactOutputMultihop(address _tokenIn, bytes memory _swapRoute, address _account, uint256 _deadline, uint256 _amountOut, uint256 maxAmountIn) external view returns (uint256);
+    function swapExactOutputMultihop(address _tokenIn, bytes memory _swapRoute, address _account, uint256 _deadline, uint256 _amountOut, uint256 maxAmountIn) external returns (uint256 amountIn);
 
     // VIEW FUNCTIONS
     function swapRouter() external view returns (address);
