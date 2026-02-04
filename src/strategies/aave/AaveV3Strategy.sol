@@ -73,9 +73,9 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
 
         uint256 withdrawnAmount = IERC20(tokenIn).balanceOf(recipient) - balanceBefore;
         int256 yield = withdrawnAmount.toInt256() - investment.toInt256();
-
+        uint256 fee;
         if (yield > 0) {
-            uint256 fee = _takePerformanceFee(tokenIn, recipient, uint256(yield));
+            fee = _takePerformanceFee(tokenIn, recipient, uint256(yield));
             if (fee > 0) {
                 withdrawnAmount -= fee;
                 yield -= fee.toInt256();
@@ -83,5 +83,8 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
         }
         recipients[recipient].totalShares -= shares;
         recipients[recipient].investedAmount = investment > recipients[recipient].investedAmount ? 0 : recipients[recipient].investedAmount - investment;
+        return (withdrawnAmount, investment, yield, fee);
+
+        //TO-DO add event
     }
 }
