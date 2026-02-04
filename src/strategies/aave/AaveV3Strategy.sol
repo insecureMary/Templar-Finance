@@ -8,5 +8,13 @@ import {IStrategy} from "../../interfaces/core/IStrategy.sol";
 
 abstract contract AaveV3Strategy is IStrategy {
     mapping(address recipient => IStrategy.RecipientInfo info) public override recipients;
-    address public feemanager;
+    address public feeManager;
+    address public tokenIn;
+
+    constructor(address _feeManager, address _tokenIn) {
+        feeManager = _feeManager;
+        tokenIn = _tokenIn;
+    }
+
+    function deposit(address asset, uint256 amount, address recipient, bytes calldata data) external returns (uint256, uint256) {}
 }
