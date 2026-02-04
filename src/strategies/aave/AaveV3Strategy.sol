@@ -61,5 +61,12 @@ abstract contract AaveV3Strategy is IStrategy, BaseStrategy {
 
         uint256 shareRatio = MathOperations.getRatio(shares, totalShares, tokenOutDecimal, MathOperations.Rounding.Floor);
         _burn(receiptToken, recipient, shares, totalShares, shareDecimal);
+
+        //get the asset amount to withdraw, this include yield
+        uint256 assetsToWithdraw = shareRatio == 10 ** shareDecimal ? type(uint256).max : IAToken(tokenOut).balanceOf(recipient) * shareRatio / 10 ** shareDecimal;
+        uint256 investment = (recipients[recipient].investedAmount * shareRatio) / (10 ** shareDecimal);
+
+        uint256 balanceBefore = IERC20(tokenIn).balanceOf(recipient);
+        _genericCall(recipient, address(lendingPool), abi.encodeCall(IPool.withdraw, (asset, assetsToWithdraw, recipient)));
     }
 }
