@@ -21,4 +21,15 @@ contract TusdManagerTest is Test, Setup {
         uint256 balanceDiff = balanceAfter - balanceBefore;
         assertEq(balanceDiff, ETHER);
     }
+
+    function testDepositWillRevertWhenTokenIsNotActive() public {
+        //arrange
+        //first let us make token 1 inactive
+        vm.prank(owner);
+        tusdManager.addNewCollateralManager(address(collateralManager), address(token1), false);
+
+        //act
+        token1Oracle.setUpdated(true);
+        // depositForUser(alice, address(token1), ETHER);
+    }
 }
