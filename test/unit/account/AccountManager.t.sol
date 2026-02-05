@@ -5,7 +5,7 @@ import {Setup} from "../../setup/Setup.t.sol";
 
 contract AccountManagerTest is Setup {
     // function setUp() public {
-    //     initialize();
+    //     initialize()
     // }
     // function createAccount(address _user) internal returns (address userAccount) {
     //     assumeNotOwnerOrAddressZero(_user);
