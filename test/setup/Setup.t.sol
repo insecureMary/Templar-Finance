@@ -42,6 +42,7 @@ abstract contract Setup is Test {
     TemplarUsd internal tUSD;
     DummyOracle internal token1Oracle;
     DummyOracle internal tUSDOracle;
+    uint256 public constant ETHER = 1e18;
 
     //Admins
     address internal owner = makeAddr("owner");
@@ -159,7 +160,7 @@ abstract contract Setup is Test {
 
     function depositForUser(address _user, address _assetToDeposit, uint256 _amountToMint) public returns (address newUserAccount) {
         IERC20Metadata collateralContract = IERC20Metadata(_assetToDeposit);
-        uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate()) * 2;
+        uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate());
         console.log("collateral value in usd initially gotten for user", collateralValueInUSd);
         deal(_assetToDeposit, _user, collateralValueInUSd);
         vm.startPrank(_user);
