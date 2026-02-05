@@ -28,9 +28,9 @@ import {TestToken} from "./TestToken.sol";
 abstract contract Setup is Test {
     //Core contracts
     IReceiptToken public receiptTokenImpl;
-    TestToken public testToken;
-    TestToken public testToken2;
-    DummyOracle public testToken2Oracle;
+    TestToken public token1;
+    TestToken public token2;
+    DummyOracle public token2Oracle;
     Manager internal manager;
     AccountManager internal accountManager;
     CollateralManager internal collateralManager;
@@ -40,7 +40,7 @@ abstract contract Setup is Test {
     StrategyManager internal strategyManager;
     LiquidationManager internal liquidationManager;
     TemplarUsd internal tUSD;
-    DummyOracle internal testTokenOracle;
+    DummyOracle internal token1Oracle;
     DummyOracle internal tUSDOracle;
 
     //Admins
@@ -56,10 +56,10 @@ abstract contract Setup is Test {
 
     function initialize() public {
         vm.startPrank(owner);
-        testToken = new TestToken();
-        testToken2 = new TestToken();
-        testTokenOracle = new DummyOracle("TestTokenOracle", "TTO");
-        testToken2Oracle = new DummyOracle("TestToken2Oracle", "TTO2");
+        token1 = new TestToken();
+        token2 = new TestToken();
+        token1Oracle = new DummyOracle("TestTokenOracle", "TTO");
+        token2Oracle = new DummyOracle("token2Oracle", "TTO2");
         tUSDOracle = new DummyOracle("TemplarUsdOracle", "TUO");
         manager = new Manager(owner, address(tUSDOracle), bytes(""));
         tUSD = new TemplarUsd(owner, address(manager));
@@ -72,8 +72,8 @@ abstract contract Setup is Test {
         collateralManager = new CollateralManager(
             owner,
             address(manager),
-            address(testToken),
-            address(testTokenOracle),
+            address(token1),
+            address(token1Oracle),
             bytes(""),
             ICollateralManager.CollateralManagerConfig({collateralizationRate: 50000, liquidationBuffer: 5e3, liquidatorBonus: 8e3})
         );
@@ -81,8 +81,8 @@ abstract contract Setup is Test {
         collateralManager2 = new CollateralManager(
             owner,
             address(manager),
-            address(testToken2),
-            address(testToken2Oracle),
+            address(token2),
+            address(token2Oracle),
             bytes(""),
             ICollateralManager.CollateralManagerConfig({collateralizationRate: 70000, liquidationBuffer: 7e3, liquidatorBonus: 1e4})
         );
@@ -98,14 +98,14 @@ abstract contract Setup is Test {
         manager.setStrategyManager(address(strategyManager));
 
         manager.setfeeRecipient(feeRecipient);
-        manager.whitelistToken(address(testToken));
-        manager.whitelistToken(address(testToken2));
+        manager.whitelistToken(address(token1));
+        manager.whitelistToken(address(token2));
 
         //Updating strategies
-        tusdManager.addNewCollateralManager(address(collateralManager), address(testToken), true);
-        assetManager[address(testToken)] = address(collateralManager);
-        tusdManager.addNewCollateralManager(address(collateralManager2), address(testToken2), true);
-        assetManager[address(testToken2)] = address(collateralManager2);
+        tusdManager.addNewCollateralManager(address(collateralManager), address(token1), true);
+        assetManager[address(token1)] = address(collateralManager);
+        tusdManager.addNewCollateralManager(address(collateralManager2), address(token2), true);
+        assetManager[address(token2)] = address(collateralManager2);
 
         vm.stopPrank();
     }

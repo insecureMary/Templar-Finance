@@ -19,4 +19,5 @@ contract AccountManagerTest is Setup {
     //     assert (accountManager.accountToUser(userAccount) == _user);
     //     assert(accountManager.us)
     // }
-}
+
+    }
