@@ -19,7 +19,7 @@ contract Manager is IManager, Ownable2Step {
     mapping(address => bool) public override canWithdrawToken;
     mapping(address => bool) public override isInvoker;
     IOracle public override tUsdOracle;
-    bytes32 public override oracleData;
+    bytes public override oracleData;
     address public override accountManager;
     address public override liquidationManager;
     address public override templarUsdManager;
@@ -32,9 +32,9 @@ contract Manager is IManager, Ownable2Step {
     uint256 public override withdrawalFeeRate;
 
     //CONSTRUCTOR
-    constructor(address _initialOwner, address _oracle, bytes32 _oracleData) Ownable(_initialOwner) isValidAddress(_oracle) {
+    constructor(address _initialOwner, address _oracle, bytes memory _oracleData) Ownable(_initialOwner) isValidAddress(_oracle) {
         tUsdOracle = IOracle(_oracle);
-        oracleData = bytes32(_oracleData);
+        oracleData = bytes(_oracleData);
     }
 
     //MODIFIERS
@@ -138,7 +138,7 @@ contract Manager is IManager, Ownable2Step {
         emit OracleUpdated(_newOracle);
     }
 
-    function setOracleData(bytes32 _newData) external onlyOwner {
+    function setOracleData(bytes memory _newData) external onlyOwner {
         oracleData = _newData;
         emit OracleDataUpdated(_newData);
     }

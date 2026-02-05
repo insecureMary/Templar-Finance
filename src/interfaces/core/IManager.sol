@@ -22,7 +22,7 @@ interface IManager {
     event feeRecipientUpdated(address indexed newAddress);
     event ReceiptTokenFactoryUpdated(address indexed newFactory);
     event OracleUpdated(address indexed newOracle);
-    event OracleDataUpdated(bytes32 indexed newData);
+    event OracleDataUpdated(bytes indexed newData);
     event MinDebtAmountUpdated(uint256 indexed newMinDebtAmount);
 
     //ERRORS
@@ -46,7 +46,7 @@ interface IManager {
 
     //ORACLE VARIABLES
     function tUsdOracle() external view returns (IOracle);
-    function oracleData() external view returns (bytes32);
+    function oracleData() external view returns (bytes memory);
 
     //MANAGER VARIABLES
     function accountManager() external view returns (address);
@@ -88,7 +88,7 @@ interface IManager {
     function setfeeRecipient(address _newfeeRecipient) external;
     function setReceiptTokenFactory(address _newFactory) external;
     function setOracle(address _newOracle) external;
-    function setOracleData(bytes32 _newData) external;
+    function setOracleData(bytes memory _newData) external;
     function setMinDebtAmount(uint256 _newMinDebtAmount) external;
     function getTusdExchangeRate() external view returns (uint256);
 }
