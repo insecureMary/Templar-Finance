@@ -9,6 +9,9 @@ contract TusdManagerTest is Test, Setup {
     }
 
     function testDepositWillPassWhenSetupIsCorrect() public {
-        //
+        //deal alice some collateral and deposit straightup
+        token1Oracle.setUpdated(true);
+        depositForUser(alice, address(token1), 1e18);
+        token1Oracle.setUpdated(true);
     }
 }
