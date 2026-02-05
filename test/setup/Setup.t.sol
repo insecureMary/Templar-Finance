@@ -47,11 +47,6 @@ abstract contract Setup is Test {
     address internal owner = makeAddr("owner");
     address internal feeRecipient = makeAddr("feeRecipient");
 
-    //Test users
-    address internal alice = makeAddr("Alice");
-    address internal bob = makeAddr("Bob");
-    address internal charlie = makeAddr("Charlie");
-
     //mapping of asset/collateral to collateral manager
     mapping(address => address) public assetManager;
 
@@ -109,5 +104,9 @@ abstract contract Setup is Test {
         assetManager[address(testToken2)] = address(collateralManager2);
 
         vm.stopPrank();
+    }
+
+    function assumeNotOwnerOrAddressZero(address _user) internal {
+        vm.assume(_user != owner || _user != feeRecipient || _user != address(0));
     }
 }
