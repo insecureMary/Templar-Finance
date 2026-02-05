@@ -28,7 +28,7 @@ contract TusdManagerTest is Test, Setup {
         vm.prank(owner);
         tusdManager.addNewCollateralManager(address(collateralManager), address(token1), false);
 
-        //act
+        //acts
         token1Oracle.setUpdated(true);
         // depositForUser(alice, address(token1), ETHER);
     }
