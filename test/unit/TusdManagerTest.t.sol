@@ -7,4 +7,8 @@ contract TusdManagerTest is Test, Setup {
     function setUp() public {
         Setup.initialize();
     }
+
+    function testDepositWillPassWhenSetupIsCorrect() public {
+        //
+    }
 }

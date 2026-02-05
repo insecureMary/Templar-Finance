@@ -50,6 +50,8 @@ abstract contract Setup is Test {
     //Users
     address internal alice = makeAddr("alice");
     address internal bob = makeAddr("bob");
+    address internal aliceAccount;
+    address internal bobAccount;
 
     //mapping of asset/collateral to collateral manager
     mapping(address => address) public assetManager;
@@ -97,6 +99,8 @@ abstract contract Setup is Test {
         manager.setTemplarUsdManager(address(tusdManager));
         manager.setStrategyManager(address(strategyManager));
 
+        manager.whitelistContract(address(accountManager));
+
         manager.setfeeRecipient(feeRecipient);
         manager.whitelistToken(address(token1));
         manager.whitelistToken(address(token2));
@@ -108,6 +112,10 @@ abstract contract Setup is Test {
         assetManager[address(token2)] = address(collateralManager2);
 
         vm.stopPrank();
+
+        //set up alice and bob account
+        aliceAccount = createAccount(alice);
+        bobAccount = createAccount(bob);
     }
 
     function assumeNotOwnerOrAddressZero(address _user) internal {
@@ -141,9 +149,12 @@ abstract contract Setup is Test {
     // }
 
     function createAccount(address _user) internal returns (address userAccount) {
-        vm.startPrank(_user);
+        //since user is not a tx.origin
+        vm.prank(address(owner));
+        manager.whitelistContract(_user);
+
+        vm.prank(_user);
         userAccount = accountManager.createAccount();
-        vm.stopPrank();
     }
 
     function depositForUser(address _user, address _assetToDeposit, uint256 _amountToMint) public returns (address newUserAccount) {
