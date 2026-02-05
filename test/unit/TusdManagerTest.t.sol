@@ -9,9 +9,16 @@ contract TusdManagerTest is Test, Setup {
     }
 
     function testDepositWillPassWhenSetupIsCorrect() public {
-        //deal alice some collateral and deposit straightup
+        //arrange
+        uint256 balanceBefore = collateralManager.collateralDeposited(aliceAccount);
+        //first make oracle updated
         token1Oracle.setUpdated(true);
-        depositForUser(alice, address(token1), 1e18);
-        token1Oracle.setUpdated(true);
+        //deal and deposit straightup
+        depositForUser(alice, address(token1), ETHER);
+
+        //assert
+        uint256 balanceAfter = collateralManager.collateralDeposited(aliceAccount);
+        uint256 balanceDiff = balanceAfter - balanceBefore;
+        assertEq(balanceDiff, ETHER);
     }
 }
