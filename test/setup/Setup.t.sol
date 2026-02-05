@@ -62,7 +62,7 @@ abstract contract Setup is Test {
         tUSD.updateMaxMintLimit(type(uint256).max);
         accountManager = new AccountManager(owner, address(manager));
         liquidationManager = new LiquidationManager(owner, address(manager));
-        tusdManager = new TUSDManager(address(tUSD), owner, address(manager));
+        tusdManager = new TUSDManager(address(tUSD), address(manager), owner);
         strategyManager = new StrategyManager(owner, address(manager));
 
         collateralManager = new CollateralManager(
