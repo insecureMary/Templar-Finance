@@ -158,7 +158,6 @@ abstract contract Setup is Test {
     }
 
     function depositForUser(address _user, address _assetToDeposit, uint256 _amountToMint) public returns (address newUserAccount) {
-        newUserAccount = createAccount(_user);
         IERC20Metadata collateralContract = IERC20Metadata(_assetToDeposit);
         uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate()) * 2;
         console.log("collateral value in usd initially gotten for user", collateralValueInUSd);
