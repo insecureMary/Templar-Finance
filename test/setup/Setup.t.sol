@@ -150,7 +150,7 @@ abstract contract Setup is Test {
         newUserAccount = createAccount(_user);
         IERC20Metadata collateralContract = IERC20Metadata(_assetToDeposit);
         uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate()) * 2;
-        console.log("collateral value in usd initially gotten", collateralValueInUSd);
+        console.log("collateral value in usd initially gotten for user", collateralValueInUSd);
         deal(_assetToDeposit, _user, collateralValueInUSd);
         vm.startPrank(_user);
         collateralContract.approve(address(accountManager), collateralValueInUSd);
