@@ -47,6 +47,10 @@ abstract contract Setup is Test {
     address internal owner = makeAddr("owner");
     address internal feeRecipient = makeAddr("feeRecipient");
 
+    //Users
+    address internal alice = makeAddr("alice");
+    address internal bob = makeAddr("bob");
+
     //mapping of asset/collateral to collateral manager
     mapping(address => address) public assetManager;
 
@@ -110,13 +114,45 @@ abstract contract Setup is Test {
         vm.assume(_user != owner || _user != feeRecipient || _user != address(0));
     }
 
-    function initUser(address _user, address _assetToDeposit, uint256 _amountToMint) public returns (address userAccount) {
+    // function initUser(
+    //     address _user,
+    //     address _assetToDeposit,
+    //     uint256 _amountToMint
+    // ) public returns (address userAccount) {
+    //     IERC20Metadata collateralContract = IERC20Metadata(_assetToDeposit);
+    //     uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(
+    //         _assetToDeposit,
+    //         _amountToMint,
+    //         collateralManager.getExchangeRate()
+    //     ) * 2;
+    //     console.log(
+    //         "collateral value in usd initially gotten",
+    //         collateralValueInUSd
+    //     );
+    //     deal(_assetToDeposit, _user, collateralValueInUSd);
+    //     vm.startPrank(_user);
+    //     userAccount = accountManager.createAccount();
+    //     collateralContract.approve(
+    //         address(accountManager),
+    //         collateralValueInUSd
+    //     );
+    //     accountManager.deposit(_assetToDeposit, collateralValueInUSd);
+    //     vm.stopPrank();
+    // }
+
+    function createAccount(address _user) internal returns (address userAccount) {
+        vm.startPrank(_user);
+        userAccount = accountManager.createAccount();
+        vm.stopPrank();
+    }
+
+    function depositForUser(address _user, address _assetToDeposit, uint256 _amountToMint) public returns (address newUserAccount) {
+        newUserAccount = createAccount(_user);
         IERC20Metadata collateralContract = IERC20Metadata(_assetToDeposit);
         uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate()) * 2;
         console.log("collateral value in usd initially gotten", collateralValueInUSd);
         deal(_assetToDeposit, _user, collateralValueInUSd);
         vm.startPrank(_user);
-        userAccount = accountManager.createAccount();
         collateralContract.approve(address(accountManager), collateralValueInUSd);
         accountManager.deposit(_assetToDeposit, collateralValueInUSd);
         vm.stopPrank();

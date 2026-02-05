@@ -11,6 +11,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 import {IAccount} from "../interfaces/core/IAccount.sol";
 import {IAccountManager} from "../interfaces/core/IAccountManager.sol";
+import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
 import {ITUSDManager} from "../interfaces/core/ITUSDManager.sol";
 import {MathOperations} from "../libraries/MathOperations.sol";
@@ -87,15 +88,10 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
         address account = userToAccount[sender];
         require(manager.canWithdrawToken(_token), IAccountManager__CannotWithdrawToken());
         //checking if this token was airdropped or user has actual collateral for the token
-        // (, address _tokenRegistry) = _getTUSDManager().sharesRegistryInfo(
-        //     _token
-        // );
-        // if (
-        //     _tokenRegistry != address(0) &&
-        //     ICollateralManager(_tokenRegistry).collateral(account) > 0
-        // ) {
-        //     _getTUSDManager().withdrawCollateral(account, _token, _amount);
-        // }
+        (, address _tokenRegistry) = _getTUSDManager().tokenRegistryInfo(_token);
+        if (_tokenRegistry != address(0) && ICollateralManager(_tokenRegistry).collateralDeposited(account) > 0) {
+            _getTUSDManager().withdrawCollateral(account, _token, _amount);
+        }
         uint256 withdrawalFeeRate = manager.withdrawalFeeRate();
         if (withdrawalFeeRate > 0) {
             uint256 withdrawalFeeAmount = MathOperations.getFeeAbsolute(_amount, withdrawalFeeRate, manager.PRECISION_FACTOR());
