@@ -109,4 +109,30 @@ abstract contract Setup is Test {
     function assumeNotOwnerOrAddressZero(address _user) internal {
         vm.assume(_user != owner || _user != feeRecipient || _user != address(0));
     }
+
+    function initUser(address _user, address _assetToDeposit, uint256 _amountToMint) public returns (address userAccount) {
+        IERC20Metadata collateralContract = IERC20Metadata(_assetToDeposit);
+        uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate()) * 2;
+        console.log("collateral value in usd initially gotten", collateralValueInUSd);
+        deal(_assetToDeposit, _user, collateralValueInUSd);
+        vm.startPrank(_user);
+        userAccount = accountManager.createAccount();
+        collateralContract.approve(address(accountManager), collateralValueInUSd);
+        accountManager.deposit(_assetToDeposit, collateralValueInUSd);
+        vm.stopPrank();
+    }
+
+    function _getCollateralAmountForUSDValue(address _collateral, uint256 _tUSDAmount, uint256 _exchangeRate) private view returns (uint256 totalCollateral) {
+        // calculate based on the USD value
+        totalCollateral = (1e18 * _tUSDAmount * manager.EXCHANGE_RATE_PRECISION()) / (_exchangeRate * 1e18);
+
+        // transform from 18 decimals to collateral's decimals
+        uint256 collateralDecimals = IERC20Metadata(_collateral).decimals();
+
+        if (collateralDecimals > 18) {
+            totalCollateral = totalCollateral * (10 ** (collateralDecimals - 18));
+        } else if (collateralDecimals < 18) {
+            totalCollateral = totalCollateral / (10 ** (18 - collateralDecimals));
+        }
+    }
 }
