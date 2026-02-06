@@ -2,6 +2,7 @@
 pragma solidity 0.8.33;
 
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 
@@ -30,6 +31,7 @@ abstract contract Setup is Test {
     IReceiptToken public receiptTokenImpl;
     TestToken public token1;
     TestToken public token2;
+    TestToken public invalidToken;
     DummyOracle public token2Oracle;
     Manager internal manager;
     AccountManager internal accountManager;
@@ -60,6 +62,7 @@ abstract contract Setup is Test {
         vm.startPrank(owner);
         token1 = new TestToken();
         token2 = new TestToken();
+        invalidToken = new TestToken();
         token1Oracle = new DummyOracle("TestTokenOracle", "TTO");
         token2Oracle = new DummyOracle("token2Oracle", "TTO2");
         tUSDOracle = new DummyOracle("TemplarUsdOracle", "TUO");
@@ -118,7 +121,7 @@ abstract contract Setup is Test {
         bobAccount = createAccount(bob);
     }
 
-    function assumeNotOwnerOrAddressZero(address _user) internal {
+    function assumeNotOwnerOrAddressZero(address _user) internal view {
         vm.assume(_user != owner || _user != feeRecipient || _user != address(0));
     }
 
@@ -157,9 +160,9 @@ abstract contract Setup is Test {
         userAccount = accountManager.createAccount();
     }
 
-    function depositForUser(address _user, address _assetToDeposit, uint256 _amountToMint) public returns (address newUserAccount) {
+    function depositForUser(address _user, address _assetToDeposit, uint256 _amountToMint) public {
         IERC20Metadata collateralContract = IERC20Metadata(_assetToDeposit);
-        uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate()) * 2;
+        uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(_assetToDeposit, _amountToMint, collateralManager.getExchangeRate());
         console.log("collateral value in usd initially gotten for user", collateralValueInUSd);
         deal(_assetToDeposit, _user, collateralValueInUSd);
         vm.startPrank(_user);
@@ -170,7 +173,7 @@ abstract contract Setup is Test {
 
     function _getCollateralAmountForUSDValue(address _collateral, uint256 _tUSDAmount, uint256 _exchangeRate) private view returns (uint256 totalCollateral) {
         // calculate based on the USD value
-        totalCollateral = (1e18 * _tUSDAmount * manager.EXCHANGE_RATE_PRECISION()) / (_exchangeRate * 1e18);
+        totalCollateral = Math.mulDiv(_tUSDAmount, manager.EXCHANGE_RATE_PRECISION(), _exchangeRate);
 
         // transform from 18 decimals to collateral's decimals
         uint256 collateralDecimals = IERC20Metadata(_collateral).decimals();
