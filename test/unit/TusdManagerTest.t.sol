@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.33;
 import {Test} from "../../lib/forge-std/src/Test.sol";
+import {CollateralManager} from "../../src/core/collateralManager.sol";
+import {ICollateralManager} from "../../src/interfaces/core/ICollateralManager.sol";
 import {ITUSDManager} from "../../src/interfaces/core/ITUSDManager.sol";
 import {Setup} from "../setup/Setup.t.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -54,6 +56,13 @@ contract TusdManagerTest is Test, Setup {
         vm.expectRevert(abi.encodeWithSelector(ITUSDManager.InactiveToken.selector));
         accountManager.deposit(address(token1), collateralValueInUSd);
         vm.stopPrank();
+    }
+
+    function testDepositCollateralWillRevertWhenNotManager() public {
+        //alice tries to call deposit directly from tusd manager
+        vm.startPrank(alice);
+        vm.expectRevert(abi.encodeWithSelector(ITUSDManager.UnAuthorized.selector));
+        tusdManager.depositCollateral(aliceAccount, address(token1), ETHER);
     }
 
     function testWithdrawWillPassWhenSetupIsCorrect() public {
@@ -184,6 +193,28 @@ contract TusdManagerTest is Test, Setup {
         accountManager.borrow(address(token1), amount, amount, true);
     }
 
+    function testBorrowWillFailWhenslippageChecked() public {
+        _deposithelper(alice, address(token1), ETHER);
+
+        uint256 amount = ETHER;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.borrow(address(token1), amount, amount, true);
+    }
+
+    function testBorrowWillFailWhenInactiveToken() public {
+        _deposithelper(alice, address(token1), ETHER);
+
+        uint256 amount = ETHER;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(owner));
+        tusdManager.addNewCollateralManager(address(collateralManager), address(token1), false);
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.borrow(address(token1), amount, amount + 1, true);
+    }
+
     function testBorrowWillFailWhenNotDeposited() public {
         uint256 amount = ETHER / 2;
         tUSDOracle.setUpdated(true);
@@ -235,6 +266,55 @@ contract TusdManagerTest is Test, Setup {
         vm.prank(address(alice));
         vm.expectRevert();
         accountManager.repay(address(token1), amount - amount, true);
+    }
+
+    function testRepayWillFailWhenNoBorrow() public {
+        //just deposit
+        uint256 amount = ETHER / 2;
+        _deposithelper(alice, address(token1), ETHER);
+
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.repay(address(token1), amount - amount, true);
+    }
+
+    function testaddNewCollateralManagerWillFailWhenNotCalledByOwner() public {
+        vm.prank(address(manager));
+        vm.expectRevert();
+        tusdManager.addNewCollateralManager(address(collateralManager), address(token1), false);
+    }
+
+    function testAddNewCollateralWithNoDeployedAt() public {
+        //setup
+
+        ICollateralManager newCollateralManager = new CollateralManager(
+            owner,
+            address(manager),
+            address(token3),
+            address(token1Oracle),
+            bytes(""),
+            ICollateralManager.CollateralManagerConfig({collateralizationRate: 50000, liquidationBuffer: 5e3, liquidatorBonus: 8e3})
+        );
+        vm.prank(address(owner));
+
+        tusdManager.addNewCollateralManager(address(newCollateralManager), address(token3), true);
+        (, address colManager) = tusdManager.tokenRegistry(address(token3));
+        assertEq(colManager, address(newCollateralManager));
+    }
+
+    function testTusdPauseAndUnpause() public {
+        vm.startPrank(address(owner));
+        tusdManager.pause();
+
+        vm.expectRevert();
+        tusdManager.pause();
+
+        tusdManager.unpause();
+        tusdManager.pause();
+    }
+
+    function testAccountIsolventReturnTrueWhenNoBorrow() public {
+        tusdManager.isAccountSolvent(address(token1), aliceAccount);
     }
 }
 

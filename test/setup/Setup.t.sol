@@ -31,6 +31,7 @@ abstract contract Setup is Test {
     IReceiptToken public receiptTokenImpl;
     TestToken public token1;
     TestToken public token2;
+    TestToken public token3;
     DummyOracle public token2Oracle;
     Manager internal manager;
     AccountManager internal accountManager;
@@ -62,6 +63,7 @@ abstract contract Setup is Test {
         vm.startPrank(owner);
         token1 = new TestToken();
         token2 = new TestToken();
+        token3 = new TestToken();
         token1Oracle = new DummyOracle("TestTokenOracle", "TTO");
         token2Oracle = new DummyOracle("token2Oracle", "TTO2");
         tUSDOracle = new DummyOracle("TemplarUsdOracle", "TUO");
