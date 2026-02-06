@@ -33,7 +33,7 @@ contract Account is IAccount, Initializable, ReentrancyGuard {
         require(success, IAccount__FailedToApprove());
     }
 
-    function transfer(address _token, address _to, uint256 _amount) external {
+    function transfer(address _token, address _to, uint256 _amount) external onlyAllowed {
         IERC20(_token).safeTransfer(_to, _amount);
     }
 
