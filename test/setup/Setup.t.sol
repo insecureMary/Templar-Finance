@@ -10,6 +10,7 @@ import {IManager} from "../../src/interfaces/core/IManager.sol";
 import {IReceiptToken} from "../../src/interfaces/core/IReceiptToken.sol";
 import {IStrategy} from "../../src/interfaces/core/IStrategy.sol";
 import {IStrategyManager} from "../../src/interfaces/core/IStrategyManager.sol";
+import {ITUSDManager} from "../../src/interfaces/core/ITUSDManager.sol";
 
 // Core contract imports
 import {AccountManager} from "../../src/core/AccountManager.sol";
@@ -169,7 +170,7 @@ abstract contract Setup is Test {
         vm.stopPrank();
     }
 
-    function _getCollateralAmountForUSDValue(address _collateral, uint256 _tUSDAmount, uint256 _exchangeRate) private view returns (uint256 totalCollateral) {
+    function _getCollateralAmountForUSDValue(address _collateral, uint256 _tUSDAmount, uint256 _exchangeRate) internal view returns (uint256 totalCollateral) {
         // calculate based on the USD value
         totalCollateral = (1e18 * _tUSDAmount * manager.EXCHANGE_RATE_PRECISION()) / (_exchangeRate * 1e18);
 
