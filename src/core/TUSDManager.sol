@@ -252,7 +252,7 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
      * @notice Override to avoid losing contract ownership.
      */
     function renounceOwnership() public pure override {
-        revert("1000");
+        revert();
     }
 
     function tokenRegistryInfo(address token) public view returns (bool isActive, address collateralManager) {
