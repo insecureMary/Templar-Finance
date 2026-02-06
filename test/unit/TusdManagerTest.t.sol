@@ -317,4 +317,3 @@ contract TusdManagerTest is Test, Setup {
         tusdManager.isAccountSolvent(address(token1), aliceAccount);
     }
 }
-
