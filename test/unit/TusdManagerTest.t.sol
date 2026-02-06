@@ -139,6 +139,28 @@ contract TusdManagerTest is Test, Setup {
         assertEq(postTotalBorrowed - preTotalBorrowed, amount);
     }
 
+    function testUserCanBorrowToAccount() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preTusdBalance = tUSD.balanceOf(address(aliceAccount));
+        uint256 preManagerBorrowed = collateralManager.borrowed(aliceAccount);
+        uint256 preTotalBorrowed = tusdManager.totalBorrowedTUSD(address(token1));
+
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        //borrowing to account instead
+        accountManager.borrow(address(token1), amount, amount, false);
+        uint256 postTusdBalance = tUSD.balanceOf(address(aliceAccount));
+        uint256 postManagerBorrowed = collateralManager.borrowed(aliceAccount);
+        uint256 postTotalBorrowed = tusdManager.totalBorrowedTUSD(address(token1));
+
+        assertEq(postTusdBalance - preTusdBalance, amount);
+        assertEq(postManagerBorrowed - preManagerBorrowed, amount);
+        assertEq(postTotalBorrowed - preTotalBorrowed, amount);
+    }
+
     function testBorrowWillFailWhenInsolvent() public {
         _deposithelper(alice, address(token1), ETHER);
 
