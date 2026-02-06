@@ -89,5 +89,20 @@ contract TusdManagerTest is Test, Setup {
         assertEq(preAccountBalance - postAccountBalance, ETHER);
         assertEq(postUserBalance - preUserBalance, ETHER);
     }
+
+    function testForceWithdrawWillPassWhensetUpIsCorrect() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+
+        //act
+        vm.prank(address(liquidationManager));
+        tusdManager.forceWithdrawCollateral(aliceAccount, address(token1), ETHER);
+
+        //assert
+        uint256 postAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        assertEq(preAccountBalance - postAccountBalance, ETHER);
+    }
 }
 
