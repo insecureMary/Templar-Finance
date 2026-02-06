@@ -118,6 +118,12 @@ contract TusdManagerTest is Test, Setup {
         tusdManager.forceWithdrawCollateral(aliceAccount, address(token1), ETHER);
     }
 
+    function testWithdrawWillFailWhenNotDeposited() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        accountManager.withdraw(address(token1), ETHER);
+    }
+
     function testUserCanBorrowAfterDepositing() public {
         //arrange
         //first let us deposit
