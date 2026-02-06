@@ -178,5 +178,13 @@ contract TusdManagerTest is Test, Setup {
         vm.expectRevert();
         accountManager.borrow(address(token1), amount, amount, true);
     }
+
+    function testBorrowWillFailWhenNotCalledFromManager() public {
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        vm.expectRevert();
+        tusdManager.borrow(alice, address(token1), amount, amount, true);
+    }
 }
 
