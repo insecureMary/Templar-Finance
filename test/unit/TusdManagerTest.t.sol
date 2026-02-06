@@ -186,5 +186,18 @@ contract TusdManagerTest is Test, Setup {
         vm.expectRevert();
         tusdManager.borrow(alice, address(token1), amount, amount, true);
     }
+
+    function testWithdrawWillFailWhenBorrowAtLimit() public {
+        _deposithelper(alice, address(token1), ETHER);
+
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        accountManager.borrow(address(token1), amount, amount, true);
+
+        vm.prank(alice);
+        vm.expectRevert();
+        accountManager.withdraw(address(token1), ETHER);
+    }
 }
 
