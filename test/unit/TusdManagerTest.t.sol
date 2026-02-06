@@ -138,5 +138,15 @@ contract TusdManagerTest is Test, Setup {
         assertEq(postManagerBorrowed - preManagerBorrowed, amount);
         assertEq(postTotalBorrowed - preTotalBorrowed, amount);
     }
+
+    function testBorrowWillFailWhenInsolvent() public {
+        _deposithelper(alice, address(token1), ETHER);
+
+        uint256 amount = ETHER;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.borrow(address(token1), amount, amount, true);
+    }
 }
 
