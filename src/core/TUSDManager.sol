@@ -10,6 +10,7 @@ import {ICollateralManager} from "../interfaces/core/ICollateralManager.sol";
 import {IManager} from "../interfaces/core/IManager.sol";
 import {ITUSDManager} from "../interfaces/core/ITUSDManager.sol";
 import {ITemplarUsd} from "../interfaces/core/ITemplarUsd.sol";
+import {console} from "forge-std/console.sol";
 
 contract TUSDManager is ITUSDManager, Ownable, Pausable {
     using Math for uint256;
@@ -67,7 +68,8 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
      *
      */
     function withdrawCollateral(address account, address token, uint256 amount) external onlyManagers whenNotPaused {
-        require(tokenRegistry[token].isActive, InactiveToken());
+        //Still deciding, but currently not sure to check active status when withdrawing
+        //require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
         require(isAccountSolvent(token, account), Insolvent());
     }
@@ -85,7 +87,7 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
     function forceWithdrawCollateral(address account, address token, uint256 amount) external whenNotPaused {
         //sanity checks
         require(msg.sender == appManager.liquidationManager(), Unauthorized());
-        require(tokenRegistry[token].isActive, InactiveToken());
+        // require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
     }
 
@@ -107,14 +109,17 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
 
         //get and convert amount to 18 decimals
         uint256 amount18 = transformTo18Decimals(token, amount);
+        console.log("amount18", amount18);
         //get the value
-        uint256 amountValue = amount18.mulDiv(ICollateralManager(token).getExchangeRate(), appManager.EXCHANGE_RATE_PRECISION());
-        uint256 mintAmount = amountValue.mulDiv(appManager.EXCHANGE_RATE_PRECISION(), 1);
+        uint256 amountValue = amount18.mulDiv(ICollateralManager(tokenRegistry[token].deployedAt).getExchangeRate(), appManager.EXCHANGE_RATE_PRECISION());
+        console.log("amountValue", amountValue);
+        uint256 mintAmount = amountValue.mulDiv(appManager.EXCHANGE_RATE_PRECISION(), appManager.getTusdExchangeRate());
+        console.log("mintAmount", mintAmount);
         //slippage check
         require(mintAmount >= minAmountOut, MintAmountIsLessThanSlippage());
 
         //update state and mint
-        address receiver = mintToSender ? IAccountManager(account).accountToUser(account) : account;
+        address receiver = mintToSender ? IAccountManager(appManager.accountManager()).accountToUser(account) : account;
         TUSD.mint(receiver, mintAmount);
         totalBorrowedTUSD[token] += mintAmount;
         _getCollateralManager(token).borrow(account, amount);
@@ -202,7 +207,7 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
     }
 
     function getCollaterizationRatio(address token, address account, uint256 rate) public view returns (uint256) {
-        ICollateralManager collateralManager = ICollateralManager(token);
+        ICollateralManager collateralManager = ICollateralManager(tokenRegistry[token].deployedAt);
         uint256 collateralAmount = collateralManager.collateralDeposited(account);
         uint256 exchangeRate = collateralManager.getExchangeRate();
         uint256 precision = appManager.EXCHANGE_RATE_PRECISION() * appManager.PRECISION_FACTOR();

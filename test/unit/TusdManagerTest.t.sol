@@ -66,4 +66,76 @@ contract TusdManagerTest is Test, Setup {
         assertEq(preAccountBalance - postAccountBalance, ETHER);
         assertEq(postUserBalance - preUserBalance, ETHER);
     }
+
+    function testWithdrawWillPassEvenWhenTokenIsInactive() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        uint256 preUserBalance = token1.balanceOf(alice);
+        //make token manager inactive
+        vm.prank(owner);
+        tusdManager.addNewCollateralManager(address(collateralManager), address(token1), false);
+        (bool isActive,) = tusdManager.tokenRegistryInfo(address(token1));
+        assertEq(isActive, false);
+
+        //act
+        vm.prank(alice);
+        accountManager.withdraw(address(token1), ETHER);
+
+        //assert
+        uint256 postAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        uint256 postUserBalance = token1.balanceOf(alice);
+        assertEq(preAccountBalance - postAccountBalance, ETHER);
+        assertEq(postUserBalance - preUserBalance, ETHER);
+    }
+
+    function testForceWithdrawWillPassWhensetUpIsCorrect() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+
+        //act
+        vm.prank(address(liquidationManager));
+        tusdManager.forceWithdrawCollateral(aliceAccount, address(token1), ETHER);
+
+        //assert
+        uint256 postAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        assertEq(preAccountBalance - postAccountBalance, ETHER);
+    }
+
+    function testForceWithdrawWillFailWhenUnauthorized() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+
+        //act
+        //We are pranking with alice instead, to check if she can force withdraw by herself
+        vm.prank(address(alice));
+        vm.expectRevert();
+        tusdManager.forceWithdrawCollateral(aliceAccount, address(token1), ETHER);
+    }
+
+    function testUserCanBorrowAfterDepositing() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preTusdBalance = tUSD.balanceOf(alice);
+        uint256 preManagerBorrowed = collateralManager.borrowed(aliceAccount);
+        uint256 preTotalBorrowed = tusdManager.totalBorrowedTUSD(address(token1));
+
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        accountManager.borrow(address(token1), amount, amount, true);
+        uint256 postTusdBalance = tUSD.balanceOf(alice);
+        uint256 postManagerBorrowed = collateralManager.borrowed(aliceAccount);
+        uint256 postTotalBorrowed = tusdManager.totalBorrowedTUSD(address(token1));
+
+        assertEq(postTusdBalance - preTusdBalance, amount);
+        assertEq(postManagerBorrowed - preManagerBorrowed, amount);
+        assertEq(postTotalBorrowed - preTotalBorrowed, amount);
+    }
 }
