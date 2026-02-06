@@ -15,6 +15,13 @@ contract TusdManagerTest is Test, Setup {
         depositForUser(user, asset, amount);
     }
 
+    function _depositAndBorrowHelper(uint256 amount) internal {
+        _deposithelper(alice, address(token1), ETHER);
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        accountManager.borrow(address(token1), amount, amount, true);
+    }
+
     function testDepositWillPassWhenSetupIsCorrect() public {
         //arrange
         uint256 balanceBefore = collateralManager.collateralDeposited(aliceAccount);
@@ -208,11 +215,8 @@ contract TusdManagerTest is Test, Setup {
 
     function testRepayWillPasssWhenSetupIsCorrect() public {
         //deposit and borrow
-        _deposithelper(alice, address(token1), ETHER);
         uint256 amount = ETHER / 2;
-        tUSDOracle.setUpdated(true);
-        vm.prank(address(alice));
-        accountManager.borrow(address(token1), amount, amount, true);
+        _depositAndBorrowHelper(amount);
 
         //repay
         uint256 preRepayTusd = tUSD.balanceOf(alice);
@@ -221,6 +225,16 @@ contract TusdManagerTest is Test, Setup {
         uint256 postRepayTusd = tUSD.balanceOf(address(alice));
 
         assertEq(preRepayTusd - postRepayTusd, amount);
+    }
+
+    function testRepayWillFailWhenAmountIsZero() public {
+        //deposit and borrow
+        uint256 amount = ETHER / 2;
+        _depositAndBorrowHelper(amount);
+
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.repay(address(token1), amount - amount, true);
     }
 }
 
