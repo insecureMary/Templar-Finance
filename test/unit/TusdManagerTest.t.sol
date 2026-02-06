@@ -67,4 +67,3 @@ contract TusdManagerTest is Test, Setup {
         assertEq(postUserBalance - preUserBalance, ETHER);
     }
 }
-

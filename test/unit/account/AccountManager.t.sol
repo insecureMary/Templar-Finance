@@ -3,6 +3,7 @@ pragma solidity 0.8.33;
 
 import {IAccountManager} from "../../../src/interfaces/core/IAccountManager.sol";
 import {Setup} from "../../setup/Setup.t.sol";
+import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract UnapprovedCaller {
     IAccountManager public am;
@@ -67,27 +68,32 @@ contract AccountManagerTest is Setup {
         assertEq(token1.balanceOf(aliceAccount), amountToDeposit);
     }
 
-    // function testUserCannotDepositInvalidToken(uint128 bounded) public {
-    //     //Arrange
-    //     uint256 amountToDeposit = uint256(bounded) + 1;
-    //     //Act
-    //     vm.expectRevert(
-    //         IAccountManager.IAccountManager__TokenNotWhitelisted.selector
-    //     );
-    //     depositForUser(alice, address(invalidToken), amountToDeposit);
-    //     //Assert
-    //     assertEq(token1.balanceOf(aliceAccount), 0);
-    // }
+    function testUserCannotDepositNewUnsetToken(uint128 bounded) public {
+        //Arrange
+        uint256 amountToDeposit = uint256(bounded) + 1;
+        //Act
+        IERC20Metadata collateralContract = IERC20Metadata(address(invalidToken));
+        uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(address(invalidToken), amountToDeposit, collateralManager.getExchangeRate());
 
-    // function testUserCannotDepositZeroAmount() public {
-    //     //Arrange
-    //     uint256 amountToDeposit = 0;
-    //     //Act
-    //     vm.expectRevert(
-    //         IAccountManager.IAccountManager__ZeroAmountInput.selector
-    //     );
-    //     depositForUser(alice, address(invalidToken), amountToDeposit);
-    //     //Assert
-    //     assertEq(token1.balanceOf(aliceAccount), 0);
-    // }
+        vm.startPrank(alice);
+        collateralContract.approve(address(accountManager), collateralValueInUSd);
+        vm.expectRevert(abi.encodeWithSelector(IAccountManager.IAccountManager__TokenNotWhitelisted.selector));
+        accountManager.deposit(address(invalidToken), collateralValueInUSd);
+        vm.stopPrank();
+    }
+
+    function testUserCannotDepositZeroAmount() public {
+        //Arrange
+        uint256 amountToDeposit = 0;
+        IERC20Metadata collateralContract = IERC20Metadata(address(token1));
+        uint256 collateralValueInUSd = _getCollateralAmountForUSDValue(address(token1), amountToDeposit, collateralManager.getExchangeRate());
+
+        //Act
+        vm.startPrank(alice);
+        collateralContract.approve(address(accountManager), collateralValueInUSd);
+        vm.expectRevert(IAccountManager.IAccountManager__ZeroAmountInput.selector);
+        accountManager.deposit(address(token1), collateralValueInUSd);
+        //Assert
+        assertEq(token1.balanceOf(aliceAccount), 0);
+    }
 }
