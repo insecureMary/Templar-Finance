@@ -15,6 +15,13 @@ contract TusdManagerTest is Test, Setup {
         depositForUser(user, asset, amount);
     }
 
+    function _depositAndBorrowHelper(uint256 amount) internal {
+        _deposithelper(alice, address(token1), ETHER);
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        accountManager.borrow(address(token1), amount, amount, true);
+    }
+
     function testDepositWillPassWhenSetupIsCorrect() public {
         //arrange
         uint256 balanceBefore = collateralManager.collateralDeposited(aliceAccount);
@@ -118,6 +125,12 @@ contract TusdManagerTest is Test, Setup {
         tusdManager.forceWithdrawCollateral(aliceAccount, address(token1), ETHER);
     }
 
+    function testWithdrawWillFailWhenNotDeposited() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        accountManager.withdraw(address(token1), ETHER);
+    }
+
     function testUserCanBorrowAfterDepositing() public {
         //arrange
         //first let us deposit
@@ -137,5 +150,90 @@ contract TusdManagerTest is Test, Setup {
         assertEq(postTusdBalance - preTusdBalance, amount);
         assertEq(postManagerBorrowed - preManagerBorrowed, amount);
         assertEq(postTotalBorrowed - preTotalBorrowed, amount);
+    }
+
+    function testUserCanBorrowToAccount() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preTusdBalance = tUSD.balanceOf(address(aliceAccount));
+        uint256 preManagerBorrowed = collateralManager.borrowed(aliceAccount);
+        uint256 preTotalBorrowed = tusdManager.totalBorrowedTUSD(address(token1));
+
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        //borrowing to account instead
+        accountManager.borrow(address(token1), amount, amount, false);
+        uint256 postTusdBalance = tUSD.balanceOf(address(aliceAccount));
+        uint256 postManagerBorrowed = collateralManager.borrowed(aliceAccount);
+        uint256 postTotalBorrowed = tusdManager.totalBorrowedTUSD(address(token1));
+
+        assertEq(postTusdBalance - preTusdBalance, amount);
+        assertEq(postManagerBorrowed - preManagerBorrowed, amount);
+        assertEq(postTotalBorrowed - preTotalBorrowed, amount);
+    }
+
+    function testBorrowWillFailWhenInsolvent() public {
+        _deposithelper(alice, address(token1), ETHER);
+
+        uint256 amount = ETHER;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.borrow(address(token1), amount, amount, true);
+    }
+
+    function testBorrowWillFailWhenNotDeposited() public {
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.borrow(address(token1), amount, amount, true);
+    }
+
+    function testBorrowWillFailWhenNotCalledFromManager() public {
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        vm.expectRevert();
+        tusdManager.borrow(alice, address(token1), amount, amount, true);
+    }
+
+    function testWithdrawWillFailWhenBorrowAtLimit() public {
+        _deposithelper(alice, address(token1), ETHER);
+
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        accountManager.borrow(address(token1), amount, amount, true);
+
+        vm.prank(alice);
+        vm.expectRevert();
+        accountManager.withdraw(address(token1), ETHER);
+    }
+
+    function testRepayWillPasssWhenSetupIsCorrect() public {
+        //deposit and borrow
+        uint256 amount = ETHER / 2;
+        _depositAndBorrowHelper(amount);
+
+        //repay
+        uint256 preRepayTusd = tUSD.balanceOf(alice);
+        vm.prank(address(alice));
+        accountManager.repay(address(token1), amount, true);
+        uint256 postRepayTusd = tUSD.balanceOf(address(alice));
+
+        assertEq(preRepayTusd - postRepayTusd, amount);
+    }
+
+    function testRepayWillFailWhenAmountIsZero() public {
+        //deposit and borrow
+        uint256 amount = ETHER / 2;
+        _depositAndBorrowHelper(amount);
+
+        vm.prank(address(alice));
+        vm.expectRevert();
+        accountManager.repay(address(token1), amount - amount, true);
     }
 }
