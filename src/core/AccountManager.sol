@@ -98,14 +98,15 @@ contract AccountManager is IAccountManager, Ownable2Step, Pausable, ReentrancyGu
             if (withdrawalFeeAmount > 0) {
                 //transfer fee to fee recipient
                 IERC20(_token).safeTransferFrom(sender, manager.feeRecipient(), withdrawalFeeAmount);
+                IAccount(account).transfer(_token, manager.feeRecipient(), withdrawalFeeAmount);
             }
             //transfer net amount to user
-            IERC20(_token).safeTransfer(sender, _amount - withdrawalFeeAmount);
+            IAccount(account).transfer(_token, sender, _amount - withdrawalFeeAmount);
 
             emit Withdrawal(account, _token, _amount, withdrawalFeeAmount);
         } else {
             //transfer full amount to user
-            IERC20(_token).safeTransfer(sender, _amount);
+            IAccount(account).transfer(_token, sender, _amount);
             emit Withdrawal(account, _token, _amount, 0);
         }
     }
