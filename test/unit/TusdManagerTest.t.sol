@@ -205,5 +205,22 @@ contract TusdManagerTest is Test, Setup {
         vm.expectRevert();
         accountManager.withdraw(address(token1), ETHER);
     }
+
+    function testRepayWillPasssWhenSetupIsCorrect() public {
+        //deposit and borrow
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 amount = ETHER / 2;
+        tUSDOracle.setUpdated(true);
+        vm.prank(address(alice));
+        accountManager.borrow(address(token1), amount, amount, true);
+
+        //repay
+        uint256 preRepayTusd = tUSD.balanceOf(alice);
+        vm.prank(address(alice));
+        accountManager.repay(address(token1), amount, true);
+        uint256 postRepayTusd = tUSD.balanceOf(address(alice));
+
+        assertEq(preRepayTusd - postRepayTusd, amount);
+    }
 }
 

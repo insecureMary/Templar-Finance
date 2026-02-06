@@ -137,7 +137,7 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
      */
     function repay(address account, address token, uint256 amount, address burnFrom) external onlyManagers {
         //get manager
-        ICollateralManager collateralManager = ICollateralManager(token);
+        ICollateralManager collateralManager = ICollateralManager(tokenRegistry[token].deployedAt);
         //sanity checks
         require(amount > 0, ZeroAmount());
         require(tokenRegistry[token].isActive, InactiveToken());
