@@ -10,6 +10,11 @@ contract TusdManagerTest is Test, Setup {
         Setup.initialize();
     }
 
+    function _deposithelper(address user, address asset, uint256 amount) internal {
+        token1Oracle.setUpdated(true);
+        depositForUser(user, asset, amount);
+    }
+
     function testDepositWillPassWhenSetupIsCorrect() public {
         //arrange
         uint256 balanceBefore = collateralManager.collateralDeposited(aliceAccount);
@@ -42,6 +47,24 @@ contract TusdManagerTest is Test, Setup {
         vm.expectRevert(abi.encodeWithSelector(ITUSDManager.InactiveToken.selector));
         accountManager.deposit(address(token1), collateralValueInUSd);
         vm.stopPrank();
+    }
+
+    function testWithdrawWillPassWhenSetupIsCorrect() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        uint256 preUserBalance = token1.balanceOf(alice);
+
+        //act
+        vm.prank(alice);
+        accountManager.withdraw(address(token1), ETHER);
+
+        //assert
+        uint256 postAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        uint256 postUserBalance = token1.balanceOf(alice);
+        assertEq(preAccountBalance - postAccountBalance, ETHER);
+        assertEq(postUserBalance - preUserBalance, ETHER);
     }
 }
 
