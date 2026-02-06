@@ -109,12 +109,9 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
 
         //get and convert amount to 18 decimals
         uint256 amount18 = transformTo18Decimals(token, amount);
-        console.log("amount18", amount18);
         //get the value
         uint256 amountValue = amount18.mulDiv(ICollateralManager(tokenRegistry[token].deployedAt).getExchangeRate(), appManager.EXCHANGE_RATE_PRECISION());
-        console.log("amountValue", amountValue);
         uint256 mintAmount = amountValue.mulDiv(appManager.EXCHANGE_RATE_PRECISION(), appManager.getTusdExchangeRate());
-        console.log("mintAmount", mintAmount);
         //slippage check
         require(mintAmount >= minAmountOut, MintAmountIsLessThanSlippage());
 
@@ -140,7 +137,7 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
      */
     function repay(address account, address token, uint256 amount, address burnFrom) external onlyManagers {
         //get manager
-        ICollateralManager collateralManager = ICollateralManager(token);
+        ICollateralManager collateralManager = ICollateralManager(tokenRegistry[token].deployedAt);
         //sanity checks
         require(amount > 0, ZeroAmount());
         require(tokenRegistry[token].isActive, InactiveToken());
