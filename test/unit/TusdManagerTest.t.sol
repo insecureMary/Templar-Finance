@@ -66,5 +66,28 @@ contract TusdManagerTest is Test, Setup {
         assertEq(preAccountBalance - postAccountBalance, ETHER);
         assertEq(postUserBalance - preUserBalance, ETHER);
     }
+
+    function testWithdrawWillPassEvenWhenTokenIsInactive() public {
+        //arrange
+        //first let us deposit
+        _deposithelper(alice, address(token1), ETHER);
+        uint256 preAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        uint256 preUserBalance = token1.balanceOf(alice);
+        //make token manager inactive
+        vm.prank(owner);
+        tusdManager.addNewCollateralManager(address(collateralManager), address(token1), false);
+        (bool isActive,) = tusdManager.tokenRegistryInfo(address(token1));
+        assertEq(isActive, false);
+
+        //act
+        vm.prank(alice);
+        accountManager.withdraw(address(token1), ETHER);
+
+        //assert
+        uint256 postAccountBalance = collateralManager.collateralDeposited(aliceAccount);
+        uint256 postUserBalance = token1.balanceOf(alice);
+        assertEq(preAccountBalance - postAccountBalance, ETHER);
+        assertEq(postUserBalance - preUserBalance, ETHER);
+    }
 }
 

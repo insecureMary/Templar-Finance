@@ -67,7 +67,8 @@ contract TUSDManager is ITUSDManager, Ownable, Pausable {
      *
      */
     function withdrawCollateral(address account, address token, uint256 amount) external onlyManagers whenNotPaused {
-        require(tokenRegistry[token].isActive, InactiveToken());
+        //Still deciding, but currently not sure to check active status when withdrawing
+        //require(tokenRegistry[token].isActive, InactiveToken());
         _getCollateralManager(token).withdrawCollateral(account, amount);
         require(isAccountSolvent(token, account), Insolvent());
     }
