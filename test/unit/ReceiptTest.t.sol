@@ -90,4 +90,57 @@ contract ReceiptTest is Setup {
         vm.stopPrank();
         assertEq(IReceiptToken(newReceiptToken).minter(), bob);
     }
+
+    function testOnlyMinterOrOwnerCanMintAndUpdatesBalances() public {
+        address newReceiptToken = testCanCloneReceiptToken();
+
+        // unauthorized caller cannot mint
+        vm.startPrank(bob);
+        vm.expectRevert(IReceiptToken.IReceiptToken__UnauthorizedCall.selector);
+        IReceiptToken(newReceiptToken).mint(bob, 1 * ETHER);
+        vm.stopPrank();
+
+        // minter can mint
+        uint256 amt1 = 10 * ETHER;
+        uint256 supplyBefore = IERC20Metadata(newReceiptToken).totalSupply();
+        vm.prank(alice);
+        IReceiptToken(newReceiptToken).mint(bob, amt1);
+        assertEq(IERC20Metadata(newReceiptToken).balanceOf(bob), amt1);
+        assertEq(IERC20Metadata(newReceiptToken).totalSupply(), supplyBefore + amt1);
+
+        // owner can also mint
+        uint256 amt2 = 5 * ETHER;
+        vm.prank(owner);
+        IReceiptToken(newReceiptToken).mint(alice, amt2);
+        assertEq(IERC20Metadata(newReceiptToken).balanceOf(alice), amt2);
+    }
+
+    function testOnlyMinterOrOwnerCanBurnAndUpdatesBalances() public {
+        address newReceiptToken = testCanCloneReceiptToken();
+
+        // mint some tokens to bob first
+        uint256 starting = 20 * ETHER;
+        vm.prank(alice);
+        IReceiptToken(newReceiptToken).mint(bob, starting);
+        assertEq(IERC20Metadata(newReceiptToken).balanceOf(bob), starting);
+
+        // unauthorized cannot burn
+        vm.startPrank(bob);
+        vm.expectRevert(IReceiptToken.IReceiptToken__UnauthorizedCall.selector);
+        IReceiptToken(newReceiptToken).burn(bob, 1 * ETHER);
+        vm.stopPrank();
+
+        // minter can burn from bob
+        uint256 burn1 = 5 * ETHER;
+        uint256 supplyBefore = IERC20Metadata(newReceiptToken).totalSupply();
+        vm.prank(alice);
+        IReceiptToken(newReceiptToken).burn(bob, burn1);
+        assertEq(IERC20Metadata(newReceiptToken).balanceOf(bob), starting - burn1);
+        assertEq(IERC20Metadata(newReceiptToken).totalSupply(), supplyBefore - burn1);
+
+        // owner can burn the rest
+        vm.prank(owner);
+        IReceiptToken(newReceiptToken).burn(bob, starting - burn1);
+        assertEq(IERC20Metadata(newReceiptToken).balanceOf(bob), 0);
+    }
 }
