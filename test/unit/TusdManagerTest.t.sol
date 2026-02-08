@@ -316,4 +316,39 @@ contract TusdManagerTest is Test, Setup {
     function testAccountIsolventReturnTrueWhenNoBorrow() public {
         tusdManager.isAccountSolvent(address(token1), aliceAccount);
     }
+
+    function testAccountIsLiquidatableIfNoBorrow() public {
+        tusdManager.isLiquidatable(aliceAccount, address(token1));
+    }
+
+    function testAccountIsLiquidatableIfBorrow() public {
+        _depositAndBorrowHelper(ETHER / 2);
+
+        ICollateralManager newCollateralManager = new CollateralManager(
+            owner,
+            address(manager),
+            address(token1),
+            address(token1Oracle),
+            bytes(""),
+            ICollateralManager.CollateralManagerConfig({collateralizationRate: 50000, liquidationBuffer: 2e4, liquidatorBonus: 8e3})
+        );
+
+        vm.prank(address(owner));
+        tusdManager.addNewCollateralManager(address(newCollateralManager), address(token1), true);
+        assertEq(tusdManager.isLiquidatable(aliceAccount, address(token1)), true);
+    }
+
+    function testAccountIsLiquidatableIfBorrowIsFalse() public {
+        _depositAndBorrowHelper(ETHER / 2);
+        assertEq(tusdManager.isLiquidatable(aliceAccount, address(token1)), false);
+    }
+
+    function testRenounceOwnership() public {
+        vm.expectRevert();
+        tusdManager.renounceOwnership();
+    }
+
+    function testGetTusdaddress() public {
+        assertEq(tusdManager.getTUSDAddress(), address(tUSD));
+    }
 }
