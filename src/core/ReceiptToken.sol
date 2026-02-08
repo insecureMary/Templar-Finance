@@ -41,7 +41,7 @@ contract ReceiptTokenFactory is IReceiptTokenFactory, Ownable2Step {
 }
 
 contract ReceiptToken is IReceiptToken, OwnableUpgradeable, ERC20Upgradeable, ReentrancyGuard {
-    address public minter;
+    address public override minter;
 
     constructor() {
         _disableInitializers();
@@ -49,7 +49,7 @@ contract ReceiptToken is IReceiptToken, OwnableUpgradeable, ERC20Upgradeable, Re
 
     //MODIFIERS
     modifier onlyOwnerOrMinter() {
-        if (msg.sender != minter || msg.sender != owner()) {
+        if (msg.sender != minter && msg.sender != owner()) {
             revert IReceiptToken__UnauthorizedCall();
         }
         _;

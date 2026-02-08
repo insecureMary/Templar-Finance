@@ -30,6 +30,7 @@ import {TestToken} from "./TestToken.sol";
 abstract contract Setup is Test {
     //Core contracts
     IReceiptToken public receiptTokenImpl;
+    IReceiptToken public dummyImpl;
     TestToken public token1;
     TestToken public token2;
     TestToken public token3;
@@ -97,6 +98,7 @@ abstract contract Setup is Test {
         );
 
         receiptTokenImpl = IReceiptToken(new ReceiptToken());
+        dummyImpl = IReceiptToken(new ReceiptToken());
         receiptTokenFactory = new ReceiptTokenFactory(owner, address(receiptTokenImpl));
 
         //manager setups

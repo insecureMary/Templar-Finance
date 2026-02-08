@@ -35,4 +35,7 @@ interface IReceiptToken is IERC20, IERC20Metadata, IERC20Errors {
     function mint(address _owner, uint256 _amount) external;
     function burn(address _owner, uint256 _amount) external;
     function setNewMinter(address _minter) external;
+
+    //VIEW FUNCTIONS
+    function minter() external view returns (address);
 }
