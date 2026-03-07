@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/github/license/insecureMary/Templar-Finance)
 
 ## About Templar-Finance 
-Templar finance is a decentralized liquidity protocol that enables users to supply or borrow assets in a trust-minimized environment. Liquidity providers (Investors) supply capital to the protocol and earn gains on the capital supplied, while borrowers can access this liquidity by depositing assets valued above the borrowed amount as collateral. Tradon is designed to function as a much more easier, accessible and decentralised version of a traditional banking system. 
+Templar finance is a decentralized liquidity protocol that enables users to supply or borrow assets in a trust-minimized environment. Liquidity providers (Investors) supply capital to the protocol and earn gains on the capital supplied and can also perform an easy swapping of assets right in the protocol. Templar finance is designed to function as a much more easier, accessible and decentralised version of a traditional investment system.
 
 ## Resources
 
